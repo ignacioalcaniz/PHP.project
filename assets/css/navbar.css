@@ -1,0 +1,246 @@
+.site-header {
+    background: rgba(22, 9, 9, 0.97);
+    color: var(--white);
+    padding: 14px 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 1px solid rgba(217, 179, 108, 0.18);
+}
+
+.header-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 28px;
+}
+
+/* BRAND */
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--gold-soft);
+    flex-shrink: 0;
+}
+
+.brand-icon {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    background: rgba(217, 179, 108, 0.16);
+    border: 1px solid rgba(217, 179, 108, 0.3);
+    border-radius: 15px;
+    font-size: 1.25rem;
+}
+
+.brand-text strong {
+    display: block;
+    font-size: 1.38rem;
+    line-height: 1;
+}
+
+.brand-text small {
+    display: block;
+    margin-top: 5px;
+    color: rgba(242, 216, 163, 0.72);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+}
+
+/* NAV CENTER */
+
+.navbar {
+    display: flex;
+    justify-content: center;
+    flex: 1;
+}
+
+.nav-list {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(217, 179, 108, 0.16);
+}
+
+.nav-list a {
+    height: 38px;
+    padding: 0 17px;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.88);
+    font-weight: 700;
+    font-size: 0.94rem;
+    transition: 0.2s ease;
+}
+
+.nav-list a:hover {
+    background: var(--gold-soft);
+    color: var(--dark);
+}
+
+.nav-admin {
+    background: rgba(217, 179, 108, 0.18);
+    color: var(--gold-soft) !important;
+}
+
+/* RIGHT SIDE */
+
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+}
+
+.cart-link {
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    color: var(--white);
+    background: rgba(255, 255, 255, 0.08);
+    padding: 0 9px 0 15px;
+    border: 1px solid rgba(217, 179, 108, 0.2);
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 0.92rem;
+}
+
+.cart-link strong {
+    width: 29px;
+    height: 29px;
+    display: grid;
+    place-items: center;
+    background: var(--gold-soft);
+    color: var(--dark);
+    border-radius: 50%;
+    font-size: 0.85rem;
+}
+
+/* USUARIO ESTILO MERCADO LIBRE */
+
+.user-menu {
+    height: 48px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 6px 5px 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(217, 179, 108, 0.2);
+    border-radius: 999px;
+}
+
+.user-avatar {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--gold-soft), var(--gold));
+    color: var(--dark);
+    font-weight: 900;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.05;
+    min-width: 95px;
+}
+
+.user-info span {
+    color: var(--white);
+    font-size: 0.86rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.user-info small {
+    margin-top: 4px;
+    color: rgba(242, 216, 163, 0.72);
+    font-size: 0.72rem;
+}
+
+.logout-link {
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 13px;
+    border-radius: 999px;
+    background: var(--gold-soft);
+    color: var(--dark);
+    font-size: 0.84rem;
+    font-weight: 900;
+}
+
+/* GUEST */
+
+.login-link,
+.register-link {
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 0.92rem;
+}
+
+.login-link {
+    color: var(--white);
+    padding: 0 16px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.register-link {
+    background: linear-gradient(135deg, var(--gold-soft), var(--gold));
+    color: var(--dark);
+    padding: 0 18px;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 900px) {
+    .header-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .navbar {
+        justify-content: flex-start;
+        width: 100%;
+    }
+
+    .nav-actions {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .nav-list {
+        border-radius: 18px;
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 600px) {
+    .brand-text small {
+        display: none;
+    }
+
+    .user-menu {
+        height: auto;
+        border-radius: 18px;
+        flex-wrap: wrap;
+        padding: 8px;
+    }
+}

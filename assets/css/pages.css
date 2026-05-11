@@ -1,0 +1,111 @@
+.hero {
+    background:
+        linear-gradient(135deg, rgba(22, 9, 9, 0.94), rgba(92, 24, 35, 0.9)),
+        radial-gradient(circle at right, rgba(217, 179, 108, 0.24), transparent 35%);
+    color: var(--white);
+    padding: 105px 0;
+}
+
+.hero-content {
+    display: grid;
+    grid-template-columns: 1.7fr 0.9fr;
+    gap: 48px;
+    align-items: center;
+}
+
+.hero-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--gold-soft), var(--gold));
+    color: var(--dark);
+    padding: 9px 16px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 800;
+    margin-bottom: 20px;
+}
+
+.hero-text h1 {
+    font-size: clamp(2.5rem, 5vw, 4.8rem);
+    margin-bottom: 22px;
+    line-height: 1.04;
+}
+
+.hero-text p {
+    margin-bottom: 30px;
+    max-width: 680px;
+    color: rgba(255, 255, 255, 0.84);
+    font-size: 1.1rem;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.hero-card {
+    background: rgba(255, 255, 255, 0.09);
+    padding: 32px;
+    border-radius: 24px;
+    border: 1px solid rgba(217, 179, 108, 0.22);
+}
+
+.hero-card h2 {
+    color: var(--gold-soft);
+}
+
+.product-detail {
+    display: grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    gap: 44px;
+    padding: 30px;
+}
+
+.product-detail-image img {
+    border-radius: 22px;
+    min-height: 480px;
+    object-fit: cover;
+}
+
+.product-detail-info h1 {
+    color: var(--wine);
+    font-size: clamp(2rem, 4vw, 3.4rem);
+}
+
+.product-data {
+    margin: 22px 0;
+    background: rgba(92, 24, 35, 0.04);
+    padding: 18px;
+    border-radius: 18px;
+}
+
+.site-footer {
+    background: linear-gradient(135deg, #160909, #2a0f0f);
+    color: #f3ede5;
+    padding: 56px 0;
+}
+
+.footer-container {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1fr;
+    gap: 34px;
+}
+
+.site-footer h3,
+.site-footer h4 {
+    color: var(--gold-soft);
+    margin-bottom: 12px;
+}
+
+.site-footer p,
+.site-footer li {
+    color: rgba(255, 255, 255, 0.75);
+}
+
+@media (max-width: 950px) {
+    .hero-content,
+    .product-detail,
+    .footer-container {
+        grid-template-columns: 1fr;
+    }
+}
