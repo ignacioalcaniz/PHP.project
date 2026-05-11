@@ -13,7 +13,7 @@
                 <h3>Productos</h3>
                 <p>Gestioná vinos, precios, stock, imágenes y productos destacados.</p>
                 <br>
-                <a href="/proyecto_cava_Noble/admin/productos.php" class="btn btn-primary">Administrar productos</a>
+                <a href="/admin/productos.php" class="btn btn-primary">Administrar productos</a>
             </div>
 
             <div class="info-card">

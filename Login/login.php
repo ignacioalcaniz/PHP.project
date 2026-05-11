@@ -8,7 +8,7 @@
 
             <h2>Ingresar</h2>
 
-            <form action="/proyecto_cava_Noble/login/procesar-login.php" method="POST" class="auth-form">
+            <form action="/Login/procesar-login.php" method="POST" class="auth-form">
 
                 <div class="form-group">
                     <label>Email</label>
@@ -30,7 +30,7 @@
 
             <p>
                 ¿No tenés cuenta?
-                <a href="/proyecto_cava_Noble/registro/registro.php">
+                <a href="/Registro/registro.php">
                     Registrate
                 </a>
             </p>

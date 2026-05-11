@@ -22,11 +22,11 @@ if ($usuario && password_verify($password, $usuario['password'])) {
     $_SESSION['usuario_email'] = $usuario['email'];
     $_SESSION['usuario_rol'] = $usuario['rol'];
 
-    header("Location: /proyecto_cava_Noble/index.php");
+    header("Location: /index.php");
     exit;
 
 } else {
 
-    header("Location: /proyecto_cava_Noble/login/login.php");
+    header("Location: /Login/login.php");
     exit;
 }

@@ -16,7 +16,7 @@ include '../includes/header.php';
             <h2>Administrar productos</h2>
             <p>Listado de vinos cargados en la tienda.</p>
             <br>
-            <a href="/proyecto_cava_Noble/admin/crear-producto.php" class="btn btn-primary">Agregar vino</a>
+            <a href="/admin/crear-producto.php" class="btn btn-primary">Agregar vino</a>
         </div>
 
         <div class="cart-box" style="max-width: 100%;">

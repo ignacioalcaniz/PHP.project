@@ -11,7 +11,7 @@
             <?php if (empty($_SESSION['carrito'])): ?>
                 <p>Tu carrito está vacío.</p>
                 <br>
-                <a href="/proyecto_cava_Noble/catalogo.php" class="btn btn-primary">Ir al catálogo</a>
+                <a href="/catalogo.php" class="btn btn-primary">Ir al catálogo</a>
 
             <?php else: ?>
                 <?php $totalGeneral = 0; ?>
@@ -38,7 +38,7 @@
                             >
 
                             <a
-                                href="/proyecto_cava_Noble/carrito/eliminar.php?id=<?php echo $item['id']; ?>"
+                                href="/carrito/eliminar.php?id=<?php echo $item['id']; ?>"
                                 class="btn-card"
                             >
                                 Eliminar
@@ -53,9 +53,9 @@
                 </div>
 
                 <div style="display:flex; gap:15px; flex-wrap:wrap;">
-                    <a href="/proyecto_cava_Noble/carrito/vaciar.php" class="btn btn-secondary">Vaciar carrito</a>
-                    <a href="/proyecto_cava_Noble/catalogo.php" class="btn btn-secondary">Seguir comprando</a>
-                    <a href="/proyecto_cava_Noble/checkout/checkout.php" class="btn btn-primary">Ir al checkout</a>
+                    <a href="/carrito/vaciar.php" class="btn btn-secondary">Vaciar carrito</a>
+                    <a href="/catalogo.php" class="btn btn-secondary">Seguir comprando</a>
+                    <a href="/checkout/checkout.php" class="btn btn-primary">Ir al checkout</a>
                 </div>
             <?php endif; ?>
         </div>

@@ -8,7 +8,7 @@
 
             <h2>Crear cuenta</h2>
 
-            <form action="/proyecto_cava_Noble/registro/procesar-registro.php" method="POST" class="auth-form">
+            <form action="/Registro/procesar-registro.php" method="POST" class="auth-form">
 
                 <div class="form-group">
                     <label>Nombre</label>
@@ -40,7 +40,7 @@
 
             <p>
                 ¿Ya tenés cuenta?
-                <a href="/proyecto_cava_Noble/login/login.php">
+                <a href="/Login/login.php">
                     Ingresá
                 </a>
             </p>

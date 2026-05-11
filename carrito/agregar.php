@@ -8,7 +8,7 @@ $productoId = isset($_POST['producto_id']) ? (int) $_POST['producto_id'] : 0;
 $cantidad = isset($_POST['cantidad']) ? (int) $_POST['cantidad'] : 1;
 
 if ($productoId <= 0 || $cantidad <= 0) {
-    header('Location: /proyecto_cava_Noble/catalogo.php');
+    header('Location: /catalogo.php');
     exit;
 }
 
@@ -20,7 +20,7 @@ $stmt->execute();
 $producto = $stmt->fetch();
 
 if (!$producto) {
-    header('Location: /proyecto_cava_Noble/catalogo.php');
+    header('Location: /catalogo.php');
     exit;
 }
 
@@ -49,5 +49,5 @@ if (isset($_SESSION['carrito'][$productoId])) {
     ];
 }
 
-header('Location: /proyecto_cava_Noble/carrito.php');
+header('Location: /carrito.php');
 exit;

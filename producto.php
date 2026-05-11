@@ -62,7 +62,7 @@ include 'includes/header.php';
                 </ul>
 
                 <?php if ((int)$producto['stock'] > 0): ?>
-                    <form action="/proyecto_cava_Noble/carrito/agregar.php" method="POST" class="auth-form">
+                    <form action="/carrito/agregar.php" method="POST" class="auth-form">
                         <input type="hidden" name="producto_id" value="<?php echo $producto['id']; ?>">
 
                         <div class="form-group">
@@ -81,7 +81,7 @@ include 'includes/header.php';
                         <button type="submit" class="btn btn-primary">Agregar al carrito</button>
                     </form>
                 <?php else: ?>
-                    <a href="/proyecto_cava_Noble/catalogo.php" class="btn btn-secondary">Volver al catálogo</a>
+                    <a href="/catalogo.php" class="btn btn-secondary">Volver al catálogo</a>
                 <?php endif; ?>
             </div>
         </div>

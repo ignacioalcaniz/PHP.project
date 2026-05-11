@@ -21,14 +21,14 @@ $inicialUsuario = $nombreUsuario !== '' ? strtoupper(substr($nombreUsuario, 0, 1
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cava Noble</title>
-    <link rel="stylesheet" href="/proyecto_cava_Noble/assets/css/styles.css">
+    <link rel="stylesheet" href="/assets/css/styles.css">
 </head>
 
 <body>
 <header class="site-header">
     <div class="container header-container">
 
-        <a href="/proyecto_cava_Noble/index.php" class="brand">
+        <a href="/index.php" class="brand">
             <span class="brand-icon">🍷</span>
             <span class="brand-text">
                 <strong>Cava Noble</strong>
@@ -38,19 +38,19 @@ $inicialUsuario = $nombreUsuario !== '' ? strtoupper(substr($nombreUsuario, 0, 1
 
         <nav class="navbar">
             <ul class="nav-list">
-                <li><a href="/proyecto_cava_Noble/index.php">Inicio</a></li>
-                <li><a href="/proyecto_cava_Noble/catalogo.php">Catálogo</a></li>
-                <li><a href="/proyecto_cava_Noble/contacto.php">Contacto</a></li>
+                <li><a href="/index.php">Inicio</a></li>
+                <li><a href="/catalogo.php">Catálogo</a></li>
+                <li><a href="/contacto.php">Contacto</a></li>
 
                 <?php if (isset($_SESSION['usuario_rol']) && $_SESSION['usuario_rol'] === 'admin'): ?>
-                    <li><a class="nav-admin" href="/proyecto_cava_Noble/admin/index.php">Admin</a></li>
+                    <li><a class="nav-admin" href="/admin/index.php">Admin</a></li>
                 <?php endif; ?>
                 
             </ul>
         </nav>
 
         <div class="nav-actions">
-            <a class="cart-link" href="/proyecto_cava_Noble/carrito.php">
+            <a class="cart-link" href="/carrito.php">
                 <span class="cart-icon">🛒</span>
                 <span>Carrito</span>
                 <strong><?php echo $cantidadCarrito; ?></strong>
@@ -67,11 +67,11 @@ $inicialUsuario = $nombreUsuario !== '' ? strtoupper(substr($nombreUsuario, 0, 1
                         <small>Cliente</small>
                     </div>
 
-                    <a class="logout-link" href="/proyecto_cava_Noble/login/logout.php">Salir</a>
+                    <a class="logout-link" href="/Login/logout.php">Salir</a>
                 </div>
             <?php else: ?>
-                <a class="login-link" href="/proyecto_cava_Noble/login/login.php">Ingresar</a>
-                <a class="register-link" href="/proyecto_cava_Noble/registro/registro.php">Registrarse</a>
+                <a class="login-link" href="/Login/login.php">Ingresar</a>
+                <a class="register-link" href="/Registro/registro.php">Registrarse</a>
             <?php endif; ?>
         </div>
 

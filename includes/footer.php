@@ -10,10 +10,10 @@
             <h4>Navegación</h4>
 
             <ul>
-                <li><a href="/proyecto_cava_Noble/index.php">Inicio</a></li>
-                <li><a href="/proyecto_cava_Noble/catalogo.php">Catálogo</a></li>
-                <li><a href="/proyecto_cava_Noble/login/login.php">Ingresar</a></li>
-                <li><a href="/proyecto_cava_Noble/carrito.php">Carrito</a></li>
+                <li><a href="/index.php">Inicio</a></li>
+                <li><a href="/catalogo.php">Catálogo</a></li>
+                <li><a href="/login/login.php">Ingresar</a></li>
+                <li><a href="/carrito.php">Carrito</a></li>
             </ul>
         </div>
 
@@ -25,7 +25,7 @@
     </div>
 </footer>
 
-<script src="/proyecto_cava_Noble/assets/js/main.js"></script>
+<script src="/assets/js/main.js"></script>
 
 </body>
 </html>

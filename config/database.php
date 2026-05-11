@@ -1,23 +1,25 @@
 <?php
 
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'cava_noble');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-
 function conectarDB() {
+
+    $host = 'sql305.infinityfree.com';
+    $dbname = 'if0_41893077_Cava_Noble';
+    $usuario = 'if0_41893077';
+    $password = 'Secundaria2015';
+
     try {
         $pdo = new PDO(
-            "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
-            DB_USER,
-            DB_PASS
+            "mysql:host=$host;dbname=$dbname;charset=utf8mb4",
+            $usuario,
+            $password
         );
 
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
         return $pdo;
+
     } catch (PDOException $e) {
-        die("Error de conexión a la base de datos: " . $e->getMessage());
+        die("Error de conexión: " . $e->getMessage());
     }
 }

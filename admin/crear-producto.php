@@ -6,7 +6,7 @@
             <h2>Agregar vino</h2>
             <p>Cargá un nuevo producto al catálogo.</p>
 
-            <form action="/proyecto_cava_Noble/admin/procesar-crear-producto.php" method="POST" class="auth-form">
+            <form action="/admin/procesar-crear-producto.php" method="POST" class="auth-form">
                 <div class="form-group">
                     <label>Nombre</label>
                     <input type="text" name="nombre" required>
@@ -66,7 +66,7 @@
                 </div>
 
                 <button type="submit" class="btn btn-primary">Guardar producto</button>
-                <a href="/proyecto_cava_Noble/admin/productos.php" class="btn btn-secondary">Cancelar</a>
+                <a href="/admin/productos.php" class="btn btn-secondary">Cancelar</a>
             </form>
         </div>
     </div>

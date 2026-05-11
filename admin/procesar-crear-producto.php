@@ -44,7 +44,7 @@ if (!empty($errores)) {
                 </ul>
 
                 <br>
-                <a href="/proyecto_cava_Noble/admin/crear-producto.php" class="btn btn-primary">Volver</a>
+                <a href="/admin/crear-producto.php" class="btn btn-primary">Volver</a>
             </div>
         </div>
     </main>
@@ -75,5 +75,5 @@ $stmt->bindParam(':destacado', $destacado, PDO::PARAM_INT);
 
 $stmt->execute();
 
-header('Location: /proyecto_cava_Noble/admin/productos.php');
+header('Location: /admin/productos.php');
 exit;

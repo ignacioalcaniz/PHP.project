@@ -22,5 +22,5 @@ $stmt->bindParam(':password', $passwordHash);
 
 $stmt->execute();
 
-header("Location: /proyecto_cava_Noble/login/login.php");
+header("Location: /Login/login.php");
 exit;
