@@ -25,7 +25,7 @@ include 'includes/header.php';
                     Una tienda pensada para quienes valoran el buen vino.
                 </p>
                 <div class="hero-actions">
-                    <a href="catalogo.php" class="btn btn-primary">Ver catálogo</a>
+                    <a href="/proyecto_cava_Noble/pages/catalogo.php" class="btn btn-primary">Ver catálogo</a>
                     <a href="#destacados" class="btn btn-secondary">Explorar destacados</a>
                 </div>
             </div>
@@ -56,7 +56,7 @@ include 'includes/header.php';
 
                             <div class="product-footer">
                                 <span class="price">$<?php echo number_format($producto['precio'], 0, ',', '.'); ?></span>
-                                <a href="producto.php?id=<?php echo $producto['id']; ?>" class="btn-card">Ver más</a>
+                                <a href="/proyecto_cava_Noble/pages/producto.php?id=<?php echo $producto['id']; ?>" class="btn-card">Ver más</a>
                             </div>
                         </div>
                     </article>

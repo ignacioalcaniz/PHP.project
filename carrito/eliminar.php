@@ -1,11 +1,25 @@
 <?php
-session_start();
+require_once '../includes/security.php';
 
-$id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
-
-if ($id > 0 && isset($_SESSION['carrito'][$id])) {
-    unset($_SESSION['carrito'][$id]);
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
 
-header('Location: /carrito.php');
-exit;
+if (!isPostRequest()) {
+    redirect('/proyecto_cava_Noble/carrito.php');
+}
+
+if (
+    !isset($_POST['csrf_token']) ||
+    !validateCsrfToken($_POST['csrf_token'])
+) {
+    die('Token CSRF inválido.');
+}
+
+$productoId = (int)($_POST['producto_id'] ?? 0);
+
+if ($productoId > 0 && isset($_SESSION['carrito'][$productoId])) {
+    unset($_SESSION['carrito'][$productoId]);
+}
+
+redirect('/proyecto_cava_Noble/carrito.php');

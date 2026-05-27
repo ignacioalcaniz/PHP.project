@@ -1,10 +1,25 @@
 <?php
+require_once '../includes/auth.php';
 require_once '../config/database.php';
+
+requireAdmin();
+
 $pdo = conectarDB();
 
-$sql = "SELECT * FROM productos ORDER BY creado_en DESC";
+$sql = "
+    SELECT
+        p.*,
+        c.nombre AS categoria,
+        b.nombre AS bodega_nombre
+    FROM productos p
+    LEFT JOIN categorias c ON p.categoria_id = c.id
+    LEFT JOIN bodegas b ON p.bodega_id = b.id
+    ORDER BY p.id DESC
+";
+
 $stmt = $pdo->prepare($sql);
 $stmt->execute();
+
 $productos = $stmt->fetchAll();
 
 include '../includes/header.php';
@@ -12,38 +27,88 @@ include '../includes/header.php';
 
 <main class="section">
     <div class="container">
+
         <div class="section-header">
             <h2>Administrar productos</h2>
-            <p>Listado de vinos cargados en la tienda.</p>
-            <br>
-            <a href="/admin/crear-producto.php" class="btn btn-primary">Agregar vino</a>
+            <p>Gestión completa del catálogo de vinos.</p>
         </div>
 
-        <div class="cart-box" style="max-width: 100%;">
+        <div style="margin-bottom: 30px;">
+            <a href="/proyecto_cava_Noble/admin/crear-producto.php" class="btn btn-primary">
+                Agregar producto
+            </a>
+        </div>
+
+        <div class="cart-box" style="max-width:100%;">
+
             <?php if (empty($productos)): ?>
                 <p>No hay productos cargados.</p>
             <?php else: ?>
+
                 <?php foreach ($productos as $producto): ?>
+
                     <div class="cart-item">
-                        <div>
-                            <h3><?php echo htmlspecialchars($producto['nombre']); ?></h3>
-                            <p><?php echo htmlspecialchars($producto['pais']); ?> · <?php echo htmlspecialchars($producto['region']); ?></p>
-                            <p><strong>Bodega:</strong> <?php echo htmlspecialchars($producto['bodega']); ?></p>
-                            <p><strong>Cepa:</strong> <?php echo htmlspecialchars($producto['cepa']); ?></p>
-                            <p><strong>Precio:</strong> $<?php echo number_format($producto['precio'], 0, ',', '.'); ?></p>
-                            <p><strong>Stock:</strong> <?php echo (int)$producto['stock']; ?></p>
-                            <p><strong>Destacado:</strong> <?php echo ((int)$producto['destacado'] === 1) ? 'Sí' : 'No'; ?></p>
+
+                        <div style="display:flex; gap:20px; align-items:center;">
+
+                            <img
+                                src="<?php echo htmlspecialchars($producto['imagen']); ?>"
+                                alt="<?php echo htmlspecialchars($producto['nombre']); ?>"
+                                style="width:100px; height:120px; object-fit:cover;"
+                            >
+
+                            <div>
+                                <h3><?php echo htmlspecialchars($producto['nombre']); ?></h3>
+
+                                <p>
+                                    <?php echo htmlspecialchars($producto['bodega_nombre'] ?? 'Sin bodega'); ?>
+                                    ·
+                                    <?php echo htmlspecialchars($producto['categoria'] ?? 'Sin categoría'); ?>
+                                </p>
+
+                                <p>
+                                    <strong>Precio:</strong>
+                                    $<?php echo number_format($producto['precio'], 0, ',', '.'); ?>
+                                </p>
+
+                                <p>
+                                    <strong>Stock:</strong>
+                                    <?php echo (int)$producto['stock']; ?>
+                                </p>
+
+                                <?php if ((int)$producto['destacado'] === 1): ?>
+                                    <span class="admin-badge">Destacado</span>
+                                <?php endif; ?>
+                            </div>
+
                         </div>
 
-                        <div style="display:flex; flex-direction:column; gap:10px; align-items:end;">
-                            <img src="<?php echo htmlspecialchars($producto['imagen']); ?>" alt="<?php echo htmlspecialchars($producto['nombre']); ?>" style="width:90px;">
-                            <a href="#" class="btn-card">Editar</a>
-                            <a href="#" class="btn-card">Eliminar</a>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+
+                            <a
+                                href="/proyecto_cava_Noble/admin/editar-producto.php?id=<?php echo $producto['id']; ?>"
+                                class="btn btn-secondary"
+                            >
+                                Editar
+                            </a>
+
+                            <a
+                                href="/proyecto_cava_Noble/admin/eliminar-producto.php?id=<?php echo $producto['id']; ?>"
+                                class="btn btn-primary"
+                            >
+                                Eliminar
+                            </a>
+
                         </div>
+
                     </div>
+
                 <?php endforeach; ?>
+
             <?php endif; ?>
+
         </div>
+
     </div>
 </main>
 

@@ -1,7 +1,21 @@
 <?php
-session_start();
+require_once '../includes/security.php';
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+if (!isPostRequest()) {
+    redirect('/proyecto_cava_Noble/carrito.php');
+}
+
+if (
+    !isset($_POST['csrf_token']) ||
+    !validateCsrfToken($_POST['csrf_token'])
+) {
+    die('Token CSRF inválido.');
+}
 
 unset($_SESSION['carrito']);
 
-header('Location: /carrito.php');
-exit;
+redirect('/proyecto_cava_Noble/carrito.php');

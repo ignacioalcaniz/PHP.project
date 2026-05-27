@@ -1,12 +1,57 @@
-<?php include '../includes/header.php'; ?>
+<?php
+require_once '../includes/auth.php';
+require_once '../includes/security.php';
+require_once '../config/database.php';
+
+requireAdmin();
+
+$pdo = conectarDB();
+
+$stmtCategorias = $pdo->prepare("
+    SELECT id, nombre
+    FROM categorias
+    ORDER BY nombre ASC
+");
+
+$stmtCategorias->execute();
+$categorias = $stmtCategorias->fetchAll();
+
+$stmtBodegas = $pdo->prepare("
+    SELECT id, nombre
+    FROM bodegas
+    ORDER BY nombre ASC
+");
+
+$stmtBodegas->execute();
+$bodegas = $stmtBodegas->fetchAll();
+
+$csrfToken = generateCsrfToken();
+
+include '../includes/header.php';
+?>
 
 <main class="section">
     <div class="container">
-        <div class="form-container" style="max-width: 800px;">
-            <h2>Agregar vino</h2>
-            <p>Cargá un nuevo producto al catálogo.</p>
 
-            <form action="/admin/procesar-crear-producto.php" method="POST" class="auth-form">
+        <div class="section-header">
+            <h2>Crear producto</h2>
+            <p>Agregar un nuevo vino al catálogo.</p>
+        </div>
+
+        <div class="form-container" style="max-width:800px;">
+
+            <form
+                action="/proyecto_cava_Noble/admin/procesar-crear-producto.php"
+                method="POST"
+                class="auth-form"
+            >
+
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="<?php echo $csrfToken; ?>"
+                >
+
                 <div class="form-group">
                     <label>Nombre</label>
                     <input type="text" name="nombre" required>
@@ -14,27 +59,44 @@
 
                 <div class="form-group">
                     <label>Descripción</label>
-                    <input type="text" name="descripcion" required>
+                    <textarea name="descripcion" rows="5" required></textarea>
                 </div>
 
                 <div class="form-group">
                     <label>Precio</label>
-                    <input type="number" name="precio" min="0" step="0.01" required>
+                    <input type="number" name="precio" min="0" required>
                 </div>
 
                 <div class="form-group">
-                    <label>País</label>
-                    <input type="text" name="pais" required>
-                </div>
+                    <label>Categoría</label>
 
-                <div class="form-group">
-                    <label>Región</label>
-                    <input type="text" name="region" required>
+                    <select name="categoria_id" required>
+                        <option value="">Seleccionar</option>
+
+                        <?php foreach ($categorias as $categoria): ?>
+
+                            <option value="<?php echo (int)$categoria['id']; ?>">
+                                <?php echo htmlspecialchars($categoria['nombre']); ?>
+                            </option>
+
+                        <?php endforeach; ?>
+                    </select>
                 </div>
 
                 <div class="form-group">
                     <label>Bodega</label>
-                    <input type="text" name="bodega" required>
+
+                    <select name="bodega_id" required>
+                        <option value="">Seleccionar</option>
+
+                        <?php foreach ($bodegas as $bodega): ?>
+
+                            <option value="<?php echo (int)$bodega['id']; ?>">
+                                <?php echo htmlspecialchars($bodega['nombre']); ?>
+                            </option>
+
+                        <?php endforeach; ?>
+                    </select>
                 </div>
 
                 <div class="form-group">
@@ -44,7 +106,7 @@
 
                 <div class="form-group">
                     <label>Añada</label>
-                    <input type="number" name="anada" min="1900" max="2030" required>
+                    <input type="number" name="anada" required>
                 </div>
 
                 <div class="form-group">
@@ -58,17 +120,22 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Destacado</label>
-                    <select name="destacado" required>
+                    <label>Producto destacado</label>
+
+                    <select name="destacado">
                         <option value="0">No</option>
                         <option value="1">Sí</option>
                     </select>
                 </div>
 
-                <button type="submit" class="btn btn-primary">Guardar producto</button>
-                <a href="/admin/productos.php" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-primary">
+                    Crear producto
+                </button>
+
             </form>
+
         </div>
+
     </div>
 </main>
 

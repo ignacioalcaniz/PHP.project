@@ -11,7 +11,7 @@
 
             <ul>
                 <li><a href="/index.php">Inicio</a></li>
-                <li><a href="/catalogo.php">Catálogo</a></li>
+                <li><a href="/pages/catalogo.php">Catálogo</a></li>
                 <li><a href="/login/login.php">Ingresar</a></li>
                 <li><a href="/carrito.php">Carrito</a></li>
             </ul>

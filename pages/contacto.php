@@ -1,4 +1,4 @@
-<?php include 'includes/header.php'; ?>
+<?php include '../includes/header.php'; ?>
 
 <main class="section">
     <div class="container">
@@ -6,7 +6,7 @@
             <h2>Contacto</h2>
             <p>Envianos tu consulta sobre productos, pedidos o recomendaciones de vinos.</p>
 
-            <form action="procesar-contacto.php" method="POST" class="auth-form">
+            <form action="/proyecto_cava_Noble/pages/procesar-contacto.php" method="POST" class="auth-form">
                 <div class="form-group">
                     <label>Nombre</label>
                     <input type="text" name="nombre" required>
@@ -33,4 +33,4 @@
     </div>
 </main>
 
-<?php include 'includes/footer.php'; ?>
+<?php include '../includes/footer.php'; ?>

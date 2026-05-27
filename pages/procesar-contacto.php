@@ -29,7 +29,7 @@ if (empty($errores)) {
     $enviado = mail($destino, $asuntoEmail, $contenido, $headers);
 }
 
-include 'includes/header.php';
+include '../includes/header.php';
 ?>
 
 <main class="section">
@@ -45,7 +45,7 @@ include 'includes/header.php';
                 </ul>
 
                 <br>
-                <a href="contacto.php" class="btn btn-primary">Volver</a>
+                <a href="/proyecto_cava_Noble/pages/contacto.php" class="btn btn-primary">Volver</a>
 
             <?php else: ?>
                 <h2>Consulta recibida</h2>
@@ -56,10 +56,10 @@ include 'includes/header.php';
                 <?php endif; ?>
 
                 <br>
-                <a href="index.php" class="btn btn-primary">Volver al inicio</a>
+                <a href="/proyecto_cava_Noble/index.php" class="btn btn-primary">Volver al inicio</a>
             <?php endif; ?>
         </div>
     </div>
 </main>
 
-<?php include 'includes/footer.php'; ?>
+<?php include '../includes/footer.php'; ?>

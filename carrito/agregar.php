@@ -1,27 +1,40 @@
 <?php
-session_start();
+require_once '../includes/security.php';
 require_once '../config/database.php';
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+if (!isPostRequest()) {
+    redirect('/proyecto_cava_Noble/pages/catalogo.php');
+}
+
+if (
+    !isset($_POST['csrf_token']) ||
+    !validateCsrfToken($_POST['csrf_token'])
+) {
+    die('Token CSRF inválido.');
+}
 
 $pdo = conectarDB();
 
-$productoId = isset($_POST['producto_id']) ? (int) $_POST['producto_id'] : 0;
-$cantidad = isset($_POST['cantidad']) ? (int) $_POST['cantidad'] : 1;
+$productoId = (int)($_POST['producto_id'] ?? 0);
+$cantidad = (int)($_POST['cantidad'] ?? 1);
 
 if ($productoId <= 0 || $cantidad <= 0) {
-    header('Location: /catalogo.php');
-    exit;
+    redirect('/proyecto_cava_Noble/pages/catalogo.php');
 }
 
-$sql = "SELECT * FROM productos WHERE id = :id LIMIT 1";
+$sql = "SELECT id, stock FROM productos WHERE id = :id LIMIT 1";
 $stmt = $pdo->prepare($sql);
 $stmt->bindParam(':id', $productoId, PDO::PARAM_INT);
 $stmt->execute();
 
 $producto = $stmt->fetch();
 
-if (!$producto) {
-    header('Location: /catalogo.php');
-    exit;
+if (!$producto || (int)$producto['stock'] <= 0) {
+    redirect('/proyecto_cava_Noble/pages/catalogo.php');
 }
 
 if ($cantidad > (int)$producto['stock']) {
@@ -40,14 +53,8 @@ if (isset($_SESSION['carrito'][$productoId])) {
     }
 } else {
     $_SESSION['carrito'][$productoId] = [
-        'id' => $producto['id'],
-        'nombre' => $producto['nombre'],
-        'precio' => $producto['precio'],
-        'imagen' => $producto['imagen'],
-        'stock' => $producto['stock'],
         'cantidad' => $cantidad
     ];
 }
 
-header('Location: /carrito.php');
-exit;
+redirect('/proyecto_cava_Noble/carrito.php');
