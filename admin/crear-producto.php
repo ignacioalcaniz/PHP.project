@@ -43,14 +43,13 @@ include '../includes/header.php';
             <form
                 action="/proyecto_cava_Noble/admin/procesar-crear-producto.php"
                 method="POST"
-                class="auth-form"
-            >
+                enctype="multipart/form-data"
+                class="auth-form">
 
                 <input
                     type="hidden"
                     name="csrf_token"
-                    value="<?php echo $csrfToken; ?>"
-                >
+                    value="<?php echo $csrfToken; ?>">
 
                 <div class="form-group">
                     <label>Nombre</label>
@@ -115,8 +114,13 @@ include '../includes/header.php';
                 </div>
 
                 <div class="form-group">
-                    <label>Imagen URL</label>
-                    <input type="text" name="imagen" required>
+                    <label>Imagen</label>
+
+                    <input
+                        type="file"
+                        name="imagen"
+                        accept=".jpg,.jpeg,.png,.webp"
+                        required>
                 </div>
 
                 <div class="form-group">

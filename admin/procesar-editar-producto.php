@@ -1,6 +1,7 @@
 <?php
 require_once '../includes/auth.php';
 require_once '../includes/security.php';
+require_once '../includes/upload.php';
 require_once '../config/database.php';
 
 requireAdmin();
@@ -27,7 +28,7 @@ $bodegaId = (int)($_POST['bodega_id'] ?? 0);
 $cepa = trim($_POST['cepa'] ?? '');
 $anada = (int)($_POST['anada'] ?? 0);
 $stock = (int)($_POST['stock'] ?? 0);
-$imagen = trim($_POST['imagen'] ?? '');
+$imagenActual = trim($_POST['imagen_actual'] ?? '');
 $destacado = (int)($_POST['destacado'] ?? 0);
 
 $errores = [];
@@ -41,35 +42,10 @@ if ($bodegaId <= 0) $errores[] = 'La bodega es obligatoria.';
 if ($cepa === '') $errores[] = 'La cepa es obligatoria.';
 if ($anada < 1900 || $anada > 2100) $errores[] = 'La añada no es válida.';
 if ($stock < 0) $errores[] = 'El stock no puede ser negativo.';
-if ($imagen === '') $errores[] = 'La imagen es obligatoria.';
+if ($imagenActual === '') $errores[] = 'La imagen actual no es válida.';
 
 if (!empty($errores)) {
-    include '../includes/header.php';
-    ?>
-
-    <main class="section">
-        <div class="container">
-            <div class="form-container">
-                <h2>Error al editar producto</h2>
-
-                <ul>
-                    <?php foreach ($errores as $error): ?>
-                        <li><?php echo e($error); ?></li>
-                    <?php endforeach; ?>
-                </ul>
-
-                <br>
-
-                <a href="/proyecto_cava_Noble/admin/editar-producto.php?id=<?php echo (int)$id; ?>" class="btn btn-primary">
-                    Volver
-                </a>
-            </div>
-        </div>
-    </main>
-
-    <?php
-    include '../includes/footer.php';
-    exit;
+    die(implode('<br>', array_map('e', $errores)));
 }
 
 $sqlBodega = "
@@ -87,6 +63,27 @@ $bodega = $stmtBodega->fetch();
 
 if (!$bodega) {
     die('Bodega inválida.');
+}
+
+$rutaImagen = $imagenActual;
+
+if (
+    isset($_FILES['imagen']) &&
+    $_FILES['imagen']['error'] !== UPLOAD_ERR_NO_FILE
+) {
+    try {
+        $rutaImagen = subirImagenProducto($_FILES['imagen']);
+
+        if (strpos($imagenActual, '/assets/uploads/products/') !== false) {
+            $rutaVieja = dirname(__DIR__) . str_replace('/proyecto_cava_Noble', '', $imagenActual);
+
+            if (file_exists($rutaVieja)) {
+                unlink($rutaVieja);
+            }
+        }
+    } catch (Exception $e) {
+        die('Error al subir imagen: ' . e($e->getMessage()));
+    }
 }
 
 $sql = "
@@ -119,7 +116,7 @@ $stmt->bindParam(':bodega', $bodega['nombre']);
 $stmt->bindParam(':cepa', $cepa);
 $stmt->bindParam(':anada', $anada, PDO::PARAM_INT);
 $stmt->bindParam(':stock', $stock, PDO::PARAM_INT);
-$stmt->bindParam(':imagen', $imagen);
+$stmt->bindParam(':imagen', $rutaImagen);
 $stmt->bindParam(':destacado', $destacado, PDO::PARAM_INT);
 $stmt->bindParam(':categoria_id', $categoriaId, PDO::PARAM_INT);
 $stmt->bindParam(':bodega_id', $bodegaId, PDO::PARAM_INT);

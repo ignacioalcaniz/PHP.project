@@ -1,15 +1,63 @@
 <?php
 require_once 'config/database.php';
+require_once 'includes/helpers.php';
 
 $pdo = conectarDB();
 
 $tituloSitio = "Cava Noble";
 $subtituloSitio = "Vinos argentinos y del exterior en una experiencia única";
 
-$sqlDestacados = "SELECT * FROM productos WHERE destacado = 1 ORDER BY id DESC LIMIT 3";
+$sqlDestacados = "
+    SELECT p.*, c.nombre AS categoria, b.nombre AS bodega_nombre
+    FROM productos p
+    LEFT JOIN categorias c ON p.categoria_id = c.id
+    LEFT JOIN bodegas b ON p.bodega_id = b.id
+    WHERE p.destacado = 1
+    ORDER BY p.id DESC
+    LIMIT 3
+";
 $stmtDestacados = $pdo->prepare($sqlDestacados);
 $stmtDestacados->execute();
 $destacados = $stmtDestacados->fetchAll();
+
+$sqlPremium = "
+    SELECT p.*, c.nombre AS categoria, b.nombre AS bodega_nombre
+    FROM productos p
+    LEFT JOIN categorias c ON p.categoria_id = c.id
+    LEFT JOIN bodegas b ON p.bodega_id = b.id
+    WHERE p.precio >= (
+        SELECT AVG(precio)
+        FROM productos
+    )
+    ORDER BY p.precio DESC
+    LIMIT 3
+";
+$stmtPremium = $pdo->prepare($sqlPremium);
+$stmtPremium->execute();
+$premium = $stmtPremium->fetchAll();
+
+$sqlArgentinos = "
+    SELECT p.*, c.nombre AS categoria, b.nombre AS bodega_nombre
+    FROM productos p
+    LEFT JOIN categorias c ON p.categoria_id = c.id
+    LEFT JOIN bodegas b ON p.bodega_id = b.id
+    WHERE p.pais = 'Argentina'
+    ORDER BY p.id DESC
+    LIMIT 3
+";
+$stmtArgentinos = $pdo->prepare($sqlArgentinos);
+$stmtArgentinos->execute();
+$argentinos = $stmtArgentinos->fetchAll();
+
+$sqlStats = "
+    SELECT
+        (SELECT COUNT(*) FROM productos) AS total_productos,
+        (SELECT COUNT(*) FROM bodegas) AS total_bodegas,
+        (SELECT COUNT(*) FROM categorias) AS total_categorias
+";
+$stmtStats = $pdo->prepare($sqlStats);
+$stmtStats->execute();
+$stats = $stmtStats->fetch();
 
 include 'includes/header.php';
 ?>
@@ -19,71 +67,156 @@ include 'includes/header.php';
         <div class="container hero-content">
             <div class="hero-text">
                 <span class="hero-badge">Selección premium</span>
-                <h1><?php echo $subtituloSitio; ?></h1>
+                <h1><?php echo e($subtituloSitio); ?></h1>
                 <p>
                     Descubrí etiquetas seleccionadas de bodegas nacionales e internacionales.
-                    Una tienda pensada para quienes valoran el buen vino.
+                    Una tienda pensada para quienes valoran el buen vino, la trazabilidad
+                    y una experiencia de compra cuidada.
                 </p>
+
                 <div class="hero-actions">
-                    <a href="/proyecto_cava_Noble/pages/catalogo.php" class="btn btn-primary">Ver catálogo</a>
-                    <a href="#destacados" class="btn btn-secondary">Explorar destacados</a>
+                    <a href="/proyecto_cava_Noble/pages/catalogo.php" class="btn btn-primary">
+                        Ver catálogo
+                    </a>
+                    <a href="#destacados" class="btn btn-secondary">
+                        Explorar destacados
+                    </a>
                 </div>
             </div>
 
             <div class="hero-card">
-                <h2><?php echo $tituloSitio; ?></h2>
-                <p>Malbec, Cabernet Sauvignon, Pinot Noir, Chardonnay y más.</p>
+                <h2><?php echo e($tituloSitio); ?></h2>
+                <p>Malbec, Cabernet Sauvignon, Pinot Noir, Chardonnay y etiquetas internacionales.</p>
+
+                <div class="home-stats">
+                    <div>
+                        <strong><?php echo (int)$stats['total_productos']; ?></strong>
+                        <span>Vinos</span>
+                    </div>
+                    <div>
+                        <strong><?php echo (int)$stats['total_bodegas']; ?></strong>
+                        <span>Bodegas</span>
+                    </div>
+                    <div>
+                        <strong><?php echo (int)$stats['total_categorias']; ?></strong>
+                        <span>Categorías</span>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
 
-    <section id="destacados" class="section">
-        <div class="container">
-            <div class="section-header">
-                <h2>Vinos destacados</h2>
-                <p>Nuestra selección recomendada para esta temporada.</p>
+    <?php
+    $secciones = [
+        [
+            'id' => 'destacados',
+            'clase' => 'section',
+            'kicker' => 'Curaduría Cava Noble',
+            'titulo' => 'Vinos destacados',
+            'descripcion' => 'Nuestra selección recomendada para esta temporada.',
+            'productos' => $destacados
+        ],
+        [
+            'id' => '',
+            'clase' => 'section section-alt',
+            'kicker' => 'Alta gama',
+            'titulo' => 'Selección premium',
+            'descripcion' => 'Etiquetas con precio superior al promedio del catálogo.',
+            'productos' => $premium
+        ],
+        [
+            'id' => '',
+            'clase' => 'section',
+            'kicker' => 'Origen nacional',
+            'titulo' => 'Vinos argentinos',
+            'descripcion' => 'Etiquetas nacionales con identidad, carácter y expresión regional.',
+            'productos' => $argentinos
+        ]
+    ];
+    ?>
+
+    <?php foreach ($secciones as $seccion): ?>
+        <section
+            <?php if ($seccion['id'] !== ''): ?>
+                id="<?php echo e($seccion['id']); ?>"
+            <?php endif; ?>
+            class="<?php echo e($seccion['clase']); ?>"
+        >
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-kicker"><?php echo e($seccion['kicker']); ?></span>
+                    <h2><?php echo e($seccion['titulo']); ?></h2>
+                    <p><?php echo e($seccion['descripcion']); ?></p>
+                </div>
+
+                <div class="products-grid">
+                    <?php if (empty($seccion['productos'])): ?>
+                        <p>No hay productos disponibles en esta sección.</p>
+                    <?php else: ?>
+                        <?php foreach ($seccion['productos'] as $producto): ?>
+                            <article class="product-card">
+                                <img
+                                    src="<?php echo e($producto['imagen']); ?>"
+                                    alt="<?php echo e($producto['nombre']); ?>"
+                                >
+
+                                <div class="product-info">
+                                    <span class="product-category">
+                                        <?php echo e($producto['categoria'] ?? $producto['pais']); ?>
+                                    </span>
+
+                                    <h3><?php echo e($producto['nombre']); ?></h3>
+
+                                    <p>
+                                        <?php echo e($producto['bodega_nombre'] ?? $producto['bodega']); ?>
+                                    </p>
+
+                                    <div class="product-footer">
+                                        <span class="price">
+                                            <?php echo formatPrice($producto['precio']); ?>
+                                        </span>
+
+                                        <a
+                                            href="/proyecto_cava_Noble/pages/producto.php?id=<?php echo (int)$producto['id']; ?>"
+                                            class="btn-card"
+                                        >
+                                            Ver más
+                                        </a>
+                                    </div>
+                                </div>
+                            </article>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
             </div>
-
-            <div class="products-grid">
-                <?php foreach ($destacados as $producto): ?>
-                    <article class="product-card">
-                        <img src="<?php echo htmlspecialchars($producto['imagen']); ?>" alt="<?php echo htmlspecialchars($producto['nombre']); ?>">
-
-                        <div class="product-info">
-                            <span class="product-category"><?php echo htmlspecialchars($producto['pais']); ?></span>
-                            <h3><?php echo htmlspecialchars($producto['nombre']); ?></h3>
-                            <p><?php echo htmlspecialchars($producto['bodega']); ?></p>
-
-                            <div class="product-footer">
-                                <span class="price">$<?php echo number_format($producto['precio'], 0, ',', '.'); ?></span>
-                                <a href="/proyecto_cava_Noble/pages/producto.php?id=<?php echo $producto['id']; ?>" class="btn-card">Ver más</a>
-                            </div>
-                        </div>
-                    </article>
-                <?php endforeach; ?>
-            </div>
-        </div>
-    </section>
+        </section>
+    <?php endforeach; ?>
 
     <section class="section section-alt">
         <div class="container">
             <div class="section-header">
-                <h2>Vinos argentinos</h2>
-                <p>Selección de etiquetas nacionales con identidad y carácter.</p>
+                <span class="section-kicker">Experiencia de compra</span>
+                <h2>Una cava digital completa</h2>
+                <p>Catálogo dinámico, stock real, checkout, pedidos y administración interna.</p>
             </div>
 
-            <div class="info-cards">
-                <div class="info-card">
-                    <h3>Mendoza</h3>
-                    <p>Malbecs intensos, elegantes y con gran estructura.</p>
+            <div class="home-feature-grid">
+                <div class="home-feature-card">
+                    <span>🍇</span>
+                    <h3>Catálogo curado</h3>
+                    <p>Vinos organizados por categoría, bodega, país, cepa y rango de precio.</p>
                 </div>
-                <div class="info-card">
-                    <h3>Salta</h3>
-                    <p>Altura, frescura y vinos con un perfil distintivo.</p>
+
+                <div class="home-feature-card">
+                    <span>🏛️</span>
+                    <h3>Bodegas seleccionadas</h3>
+                    <p>Etiquetas nacionales e internacionales con información de origen y región.</p>
                 </div>
-                <div class="info-card">
-                    <h3>Patagonia</h3>
-                    <p>Pinot Noir y blancos con expresión delicada y moderna.</p>
+
+                <div class="home-feature-card">
+                    <span>🛒</span>
+                    <h3>Compra simple</h3>
+                    <p>Carrito, checkout y generación de pedidos integrados con MySQL.</p>
                 </div>
             </div>
         </div>

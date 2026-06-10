@@ -1,6 +1,8 @@
 <?php
+
 require_once '../includes/auth.php';
 require_once '../includes/security.php';
+require_once '../includes/upload.php';
 require_once '../config/database.php';
 
 requireAdmin();
@@ -26,18 +28,40 @@ $bodegaId = (int)($_POST['bodega_id'] ?? 0);
 $cepa = trim($_POST['cepa'] ?? '');
 $anada = (int)($_POST['anada'] ?? 0);
 $stock = (int)($_POST['stock'] ?? 0);
-$imagen = trim($_POST['imagen'] ?? '');
 $destacado = (int)($_POST['destacado'] ?? 0);
 
+try {
+
+    $rutaImagen = subirImagenProducto(
+        $_FILES['imagen']
+    );
+
+} catch (Exception $e) {
+
+    die(
+        'Error al subir imagen: ' .
+        $e->getMessage()
+    );
+}
+
 $sqlBodega = "
-    SELECT pais, region, nombre
+    SELECT
+        pais,
+        region,
+        nombre
     FROM bodegas
     WHERE id = :id
     LIMIT 1
 ";
 
 $stmtBodega = $pdo->prepare($sqlBodega);
-$stmtBodega->bindParam(':id', $bodegaId, PDO::PARAM_INT);
+
+$stmtBodega->bindParam(
+    ':id',
+    $bodegaId,
+    PDO::PARAM_INT
+);
+
 $stmtBodega->execute();
 
 $bodega = $stmtBodega->fetch();
@@ -90,11 +114,13 @@ $stmt->bindParam(':bodega', $bodega['nombre']);
 $stmt->bindParam(':cepa', $cepa);
 $stmt->bindParam(':anada', $anada);
 $stmt->bindParam(':stock', $stock);
-$stmt->bindParam(':imagen', $imagen);
+$stmt->bindParam(':imagen', $rutaImagen);
 $stmt->bindParam(':destacado', $destacado);
 $stmt->bindParam(':categoria_id', $categoriaId);
 $stmt->bindParam(':bodega_id', $bodegaId);
 
 $stmt->execute();
 
-redirect('/proyecto_cava_Noble/admin/productos.php');
+redirect(
+    '/proyecto_cava_Noble/admin/productos.php'
+);
