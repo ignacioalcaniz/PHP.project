@@ -1,19 +1,20 @@
 <?php
 
-function e($value) {
-    return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
-}
+require_once __DIR__ . '/helpers.php';
 
-function redirect($path) {
+function redirect(string $path): void
+{
     header("Location: $path");
     exit;
 }
 
-function isPostRequest() {
+function isPostRequest(): bool
+{
     return $_SERVER['REQUEST_METHOD'] === 'POST';
 }
 
-function generateCsrfToken() {
+function generateCsrfToken(): string
+{
     if (empty($_SESSION['csrf_token'])) {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     }
@@ -21,6 +22,7 @@ function generateCsrfToken() {
     return $_SESSION['csrf_token'];
 }
 
-function validateCsrfToken($token) {
+function validateCsrfToken(string $token): bool
+{
     return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
 }

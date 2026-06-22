@@ -12,7 +12,7 @@ include '../includes/header.php';
             <h2>Panel administrador</h2>
             <p>
                 Centro de gestión de Cava Noble: catálogo, ventas, clientes,
-                reportes y operaciones internas del e-commerce.
+                reportes, auditoría y operaciones internas del e-commerce.
             </p>
         </div>
 
@@ -150,6 +150,28 @@ include '../includes/header.php';
                 </div>
             </div>
 
+            <div class="admin-card">
+                <div class="admin-card-top">
+                    <div class="admin-card-header">
+                        <div class="admin-icon">📜</div>
+                        <span class="admin-badge">Seguridad</span>
+                    </div>
+
+                    <h3>Auditoría</h3>
+
+                    <p>
+                        Consultá el historial de acciones realizadas
+                        por administradores dentro del sistema.
+                    </p>
+                </div>
+
+                <div class="admin-card-actions">
+                    <a href="/proyecto_cava_Noble/admin/logs.php" class="btn btn-primary">
+                        Ver registros
+                    </a>
+                </div>
+            </div>
+
         </div>
 
         <div class="admin-status-panel">
@@ -189,8 +211,8 @@ include '../includes/header.php';
                 <div class="admin-status-card">
                     <h3>Seguridad aplicada</h3>
                     <p>
-                        Sistema protegido con roles,
-                        sesiones, CSRF y consultas preparadas.
+                        Roles, sesiones seguras, CSRF, cookies HttpOnly,
+                        rate limiting, headers seguros y auditoría admin.
                     </p>
                 </div>
 

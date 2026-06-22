@@ -11,12 +11,7 @@ function e(mixed $value): string
 
 function formatPrice(float|int|string $price): string
 {
-    return '$' . number_format(
-        (float)$price,
-        0,
-        ',',
-        '.'
-    );
+    return '$' . number_format((float)$price, 0, ',', '.');
 }
 
 function stockLabel(float|int|string $stock): string

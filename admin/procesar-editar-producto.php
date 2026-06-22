@@ -1,7 +1,9 @@
 <?php
+
 require_once '../includes/auth.php';
 require_once '../includes/security.php';
 require_once '../includes/upload.php';
+require_once '../includes/admin-log.php';
 require_once '../config/database.php';
 
 requireAdmin();
@@ -66,6 +68,7 @@ if (!$bodega) {
 }
 
 $rutaImagen = $imagenActual;
+$imagenCambiada = false;
 
 if (
     isset($_FILES['imagen']) &&
@@ -73,6 +76,7 @@ if (
 ) {
     try {
         $rutaImagen = subirImagenProducto($_FILES['imagen']);
+        $imagenCambiada = true;
 
         if (strpos($imagenActual, '/assets/uploads/products/') !== false) {
             $rutaVieja = dirname(__DIR__) . str_replace('/proyecto_cava_Noble', '', $imagenActual);
@@ -123,5 +127,19 @@ $stmt->bindParam(':bodega_id', $bodegaId, PDO::PARAM_INT);
 $stmt->bindParam(':id', $id, PDO::PARAM_INT);
 
 $stmt->execute();
+
+$descripcionLog = 'Producto editado: ' . $nombre;
+
+if ($imagenCambiada) {
+    $descripcionLog .= ' | Imagen actualizada';
+}
+
+createAdminLog(
+    (int)$_SESSION['usuario_id'],
+    'EDITAR',
+    'PRODUCTO',
+    $id,
+    $descripcionLog
+);
 
 redirect('/proyecto_cava_Noble/admin/productos.php');

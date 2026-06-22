@@ -3,6 +3,7 @@
 require_once '../includes/auth.php';
 require_once '../includes/security.php';
 require_once '../includes/upload.php';
+require_once '../includes/admin-log.php';
 require_once '../config/database.php';
 
 requireAdmin();
@@ -31,37 +32,20 @@ $stock = (int)($_POST['stock'] ?? 0);
 $destacado = (int)($_POST['destacado'] ?? 0);
 
 try {
-
-    $rutaImagen = subirImagenProducto(
-        $_FILES['imagen']
-    );
-
+    $rutaImagen = subirImagenProducto($_FILES['imagen']);
 } catch (Exception $e) {
-
-    die(
-        'Error al subir imagen: ' .
-        $e->getMessage()
-    );
+    die('Error al subir imagen: ' . e($e->getMessage()));
 }
 
 $sqlBodega = "
-    SELECT
-        pais,
-        region,
-        nombre
+    SELECT pais, region, nombre
     FROM bodegas
     WHERE id = :id
     LIMIT 1
 ";
 
 $stmtBodega = $pdo->prepare($sqlBodega);
-
-$stmtBodega->bindParam(
-    ':id',
-    $bodegaId,
-    PDO::PARAM_INT
-);
-
+$stmtBodega->bindParam(':id', $bodegaId, PDO::PARAM_INT);
 $stmtBodega->execute();
 
 $bodega = $stmtBodega->fetch();
@@ -112,15 +96,23 @@ $stmt->bindParam(':pais', $bodega['pais']);
 $stmt->bindParam(':region', $bodega['region']);
 $stmt->bindParam(':bodega', $bodega['nombre']);
 $stmt->bindParam(':cepa', $cepa);
-$stmt->bindParam(':anada', $anada);
-$stmt->bindParam(':stock', $stock);
+$stmt->bindParam(':anada', $anada, PDO::PARAM_INT);
+$stmt->bindParam(':stock', $stock, PDO::PARAM_INT);
 $stmt->bindParam(':imagen', $rutaImagen);
-$stmt->bindParam(':destacado', $destacado);
-$stmt->bindParam(':categoria_id', $categoriaId);
-$stmt->bindParam(':bodega_id', $bodegaId);
+$stmt->bindParam(':destacado', $destacado, PDO::PARAM_INT);
+$stmt->bindParam(':categoria_id', $categoriaId, PDO::PARAM_INT);
+$stmt->bindParam(':bodega_id', $bodegaId, PDO::PARAM_INT);
 
 $stmt->execute();
 
-redirect(
-    '/proyecto_cava_Noble/admin/productos.php'
+$productoId = (int)$pdo->lastInsertId();
+
+createAdminLog(
+    (int)$_SESSION['usuario_id'],
+    'CREAR',
+    'PRODUCTO',
+    $productoId,
+    'Producto creado: ' . $nombre
 );
+
+redirect('/proyecto_cava_Noble/admin/productos.php');
