@@ -17,7 +17,7 @@
     font-size: 1.05rem;
 }
 
-/* GRID PRINCIPAL */
+/* DASHBOARD GRID */
 
 .admin-grid {
     display: grid;
@@ -26,7 +26,7 @@
     align-items: stretch;
 }
 
-/* TARJETAS */
+/* DASHBOARD CARDS */
 
 .admin-card {
     position: relative;
@@ -81,8 +81,7 @@
     place-items: center;
     flex-shrink: 0;
     border-radius: 22px;
-    background:
-        linear-gradient(135deg, var(--wine), var(--wine-2));
+    background: linear-gradient(135deg, var(--wine), var(--wine-2));
     color: var(--gold-soft);
     font-size: 1.6rem;
     box-shadow: 0 14px 28px rgba(92, 24, 35, 0.25);
@@ -125,11 +124,129 @@
 
 .admin-card-actions .btn {
     width: 100%;
-    text-align: center;
-    justify-content: center;
 }
 
-/* PANEL ESTADO */
+/* ADMIN TOOLBAR */
+
+.admin-toolbar {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 30px;
+}
+
+/* ADMIN LISTS */
+
+.admin-products-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.admin-product-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 24px;
+    align-items: center;
+    padding: 24px 28px;
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+}
+
+.admin-product-main {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    min-width: 0;
+}
+
+.admin-product-info {
+    min-width: 0;
+}
+
+.admin-product-info h3 {
+    color: var(--wine);
+    font-size: 1.25rem;
+    margin-bottom: 6px;
+}
+
+.admin-product-info p {
+    color: var(--muted);
+    margin-bottom: 7px;
+    line-height: 1.45;
+}
+
+.admin-product-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.admin-product-meta span {
+    color: var(--muted);
+}
+
+/* ACTION BUTTONS */
+
+.admin-product-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.admin-action-btn,
+button.admin-action-btn {
+    min-width: 104px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 18px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 900;
+    line-height: 1;
+    transition: 0.22s ease;
+}
+
+.admin-action-edit {
+    background: rgba(217, 179, 108, 0.15);
+    border: 1px solid rgba(217, 179, 108, 0.5);
+    color: var(--wine);
+}
+
+.admin-action-edit:hover {
+    background: rgba(217, 179, 108, 0.28);
+    transform: translateY(-2px);
+}
+
+.admin-action-delete {
+    background: linear-gradient(135deg, #8b1e2d, #5c1823);
+    color: #fff;
+}
+
+.admin-action-delete:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(92, 24, 35, 0.24);
+}
+
+.admin-action-disabled {
+    opacity: 0.45;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+/* STATUS PANEL */
 
 .admin-status-panel {
     margin-top: 60px;
@@ -156,7 +273,6 @@
     letter-spacing: -0.04em;
 }
 
-.admin-status-panel > p,
 .admin-status-header p {
     color: rgba(255,255,255,0.72);
 }
@@ -187,31 +303,274 @@
     line-height: 1.55;
 }
 
-/* MEJORAS GENERALES ADMIN */
+/* REPORTS */
 
-.admin-card .btn-primary,
-.admin-status-panel .btn-primary {
-    box-shadow: none;
+.admin-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
 }
 
-.admin-card .btn-primary:hover {
-    transform: translateY(-2px);
+.admin-kpi-card,
+.admin-report-panel,
+.admin-profile-card {
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    border-radius: 28px;
+}
+
+.admin-kpi-card {
+    padding: 28px;
+}
+
+.admin-kpi-card span {
+    display: inline-block;
+    margin-bottom: 12px;
+    color: var(--wine);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    font-size: 0.75rem;
+}
+
+.admin-kpi-card strong {
+    display: block;
+    color: var(--wine);
+    font-size: 2rem;
+    margin-bottom: 8px;
+}
+
+.admin-kpi-card small {
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.admin-report-grid,
+.admin-detail-layout {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+.admin-detail-layout {
+    grid-template-columns: 1.3fr 1fr 1fr;
+}
+
+.admin-report-panel {
+    padding: 30px;
+}
+
+.admin-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 18px;
+    margin-bottom: 22px;
+}
+
+.admin-report-panel h2,
+.admin-panel-header h2 {
+    color: var(--wine);
+    margin-bottom: 8px;
+}
+
+.admin-report-panel p,
+.admin-panel-header p {
+    color: var(--muted);
+}
+
+.admin-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.admin-list-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 22px;
+    align-items: center;
+    padding: 18px 0;
+    border-bottom: 1px solid rgba(92, 24, 35, 0.1);
+}
+
+.admin-list-row:last-child {
+    border-bottom: none;
+}
+
+.admin-list-row h3 {
+    color: var(--wine);
+    margin-bottom: 5px;
+}
+
+.admin-list-row p {
+    color: var(--muted);
+    margin-bottom: 4px;
+}
+
+.admin-list-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    text-align: right;
+}
+
+/* TABLES */
+
+.admin-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+}
+
+.admin-table th {
+    padding: 14px 16px;
+    text-align: left;
+    color: var(--wine);
+    background: #fffaf5;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.admin-table td {
+    padding: 16px;
+    border-bottom: 1px solid rgba(92, 24, 35, 0.1);
+    color: var(--muted);
+    vertical-align: top;
+}
+
+.admin-table td strong {
+    display: block;
+    color: var(--wine);
+}
+
+.admin-table td small {
+    display: block;
+    margin-top: 4px;
+}
+
+/* EMPTY STATE */
+
+.admin-empty-state {
+    padding: 28px;
+    border-radius: 22px;
+    background: #fffaf5;
+    border: 1px dashed rgba(92, 24, 35, 0.18);
+}
+
+.admin-empty-state h3 {
+    color: var(--wine);
+    margin-bottom: 8px;
+}
+
+/* USER DETAIL */
+
+.admin-profile-card {
+    padding: 28px;
+}
+
+.admin-profile-avatar {
+    width: 74px;
+    height: 74px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 18px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, var(--wine), var(--wine-2));
+    color: var(--gold-soft);
+    font-size: 2rem;
+    font-weight: 900;
+}
+
+.admin-profile-card h3 {
+    color: var(--wine);
+    margin: 12px 0 8px;
+}
+
+.admin-profile-card p {
+    color: var(--muted);
+}
+
+.admin-role-form {
+    max-width: 520px;
+}
+
+/* DELETE CONFIRM */
+
+.delete-confirm-card {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 42px;
+    border-radius: 32px;
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+}
+
+.delete-confirm-card h2 {
+    color: var(--wine);
+    margin: 12px 0;
+    font-size: 2.3rem;
+}
+
+.delete-confirm-card p {
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+.delete-summary {
+    margin: 28px 0;
+    padding: 24px;
+    border-radius: 22px;
+    background: #fffaf5;
+    border: 1px solid rgba(92, 24, 35, 0.1);
+}
+
+.delete-warning {
+    margin-bottom: 26px;
+    padding: 16px 18px;
+    border-radius: 18px;
+    background: rgba(139, 30, 45, 0.08);
+    color: #8b1e2d;
+    font-weight: 800;
+}
+
+.delete-actions {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    align-items: center;
 }
 
 /* RESPONSIVE */
 
 @media (max-width: 1100px) {
-    .admin-grid {
+    .admin-grid,
+    .admin-kpi-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .admin-status-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
+    .admin-report-grid,
+    .admin-detail-layout {
+        grid-template-columns: 1fr;
+    }
 }
 
-@media (max-width: 700px) {
+@media (max-width: 760px) {
     .admin-grid,
+    .admin-kpi-grid,
     .admin-status-grid {
         grid-template-columns: 1fr;
     }
@@ -221,11 +580,31 @@
         flex-direction: column;
     }
 
-    .admin-card {
+    .admin-card,
+    .admin-status-card {
         min-height: auto;
     }
 
-    .admin-status-card {
-        min-height: auto;
+    .admin-product-row {
+        grid-template-columns: 1fr;
+        align-items: flex-start;
+    }
+
+    .admin-product-main {
+        align-items: flex-start;
+    }
+
+    .admin-product-actions {
+        justify-content: flex-start;
+    }
+
+    .admin-list-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .admin-list-actions {
+        align-items: flex-start;
+        text-align: left;
     }
 }

@@ -1,9 +1,8 @@
 <?php
+require_once '../includes/session.php';
 require_once '../includes/security.php';
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+startSecureSession();
 
 if (!isPostRequest()) {
     redirect('/proyecto_cava_Noble/carrito.php');

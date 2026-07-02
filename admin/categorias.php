@@ -24,37 +24,81 @@ $categorias = $stmt->fetchAll();
 include '../includes/header.php';
 ?>
 
-<main class="section">
+<main class="section admin-shell">
     <div class="container">
+
         <div class="section-header">
+            <span class="section-kicker">Organización</span>
             <h2>Categorías</h2>
-            <p>Administración de categorías del catálogo.</p>
+            <p>Administración completa de categorías del catálogo.</p>
         </div>
 
-        <div style="margin-bottom: 30px;">
+        <div class="admin-toolbar">
             <a href="/proyecto_cava_Noble/admin/crear-categoria.php" class="btn btn-primary">
                 Crear categoría
             </a>
         </div>
 
-        <div class="cart-box" style="max-width:100%;">
+        <div class="admin-products-list">
+
             <?php if (empty($categorias)): ?>
-                <p>No hay categorías cargadas.</p>
+
+                <div class="admin-empty-state">
+                    <h3>No hay categorías cargadas</h3>
+                    <p>Creá la primera categoría para organizar el catálogo.</p>
+                </div>
+
             <?php else: ?>
+
                 <?php foreach ($categorias as $categoria): ?>
-                    <div class="cart-item">
-                        <div>
-                            <h3><?php echo e($categoria['nombre']); ?></h3>
-                            <p><?php echo e($categoria['descripcion'] ?? 'Sin descripción'); ?></p>
-                            <p><strong>Productos asociados:</strong> <?php echo (int)$categoria['total_productos']; ?></p>
+
+                    <article class="admin-product-row">
+
+                        <div class="admin-product-main">
+                            <div class="admin-icon">🏷️</div>
+
+                            <div class="admin-product-info">
+                                <h3><?php echo e($categoria['nombre']); ?></h3>
+
+                                <p>
+                                    <?php echo e($categoria['descripcion'] ?? 'Sin descripción'); ?>
+                                </p>
+
+                                <div class="admin-product-meta">
+                                    <span>
+                                        <strong>Productos asociados:</strong>
+                                        <?php echo (int)$categoria['total_productos']; ?>
+                                    </span>
+
+                                    <span class="admin-badge">
+                                        <?php echo (int)$categoria['total_productos']; ?> productos
+                                    </span>
+                                </div>
+                            </div>
                         </div>
 
-                        <span class="admin-badge">
-                            <?php echo (int)$categoria['total_productos']; ?> productos
-                        </span>
-                    </div>
+                        <div class="admin-product-actions">
+                            <a
+                                href="/proyecto_cava_Noble/admin/editar-categoria.php?id=<?php echo (int)$categoria['id']; ?>"
+                                class="admin-action-btn admin-action-edit"
+                            >
+                                Editar
+                            </a>
+
+                            <a
+                                href="/proyecto_cava_Noble/admin/confirmar-eliminar-categoria.php?id=<?php echo (int)$categoria['id']; ?>"
+                                class="admin-action-btn admin-action-delete <?php echo (int)$categoria['total_productos'] > 0 ? 'admin-action-disabled' : ''; ?>"
+                            >
+                                Eliminar
+                            </a>
+                        </div>
+
+                    </article>
+
                 <?php endforeach; ?>
+
             <?php endif; ?>
+
         </div>
 
         <br>
@@ -62,6 +106,7 @@ include '../includes/header.php';
         <a href="/proyecto_cava_Noble/admin/index.php" class="btn btn-secondary">
             Volver al panel
         </a>
+
     </div>
 </main>
 

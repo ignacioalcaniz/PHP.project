@@ -1,9 +1,9 @@
 <?php
+require_once '../includes/session.php';
 require_once '../includes/security.php';
+require_once '../includes/captcha.php';
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+startSecureSession();
 
 $csrfToken = generateCsrfToken();
 
@@ -17,14 +17,20 @@ include '../includes/header.php';
             <p>Registrate para comprar y administrar tu experiencia en Cava Noble.</p>
 
             <?php if (isset($_GET['error'])): ?>
-                <p style="color:#8b0000;">
+                <p style="color:#8b0000; font-weight:700;">
                     No se pudo completar el registro. Revisá los datos ingresados.
                 </p>
             <?php endif; ?>
 
             <?php if (isset($_GET['duplicado'])): ?>
-                <p style="color:#8b0000;">
+                <p style="color:#8b0000; font-weight:700;">
                     Ya existe una cuenta registrada con ese email.
+                </p>
+            <?php endif; ?>
+
+            <?php if (isset($_GET['captcha'])): ?>
+                <p style="color:#8b0000; font-weight:700;">
+                    No se pudo validar la comprobación de seguridad.
                 </p>
             <?php endif; ?>
 
@@ -56,6 +62,8 @@ include '../includes/header.php';
                         autocomplete="new-password"
                     >
                 </div>
+
+                <?php renderTurnstileWidget(); ?>
 
                 <button type="submit" class="btn btn-primary">
                     Registrarme

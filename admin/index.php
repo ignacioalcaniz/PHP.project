@@ -171,6 +171,27 @@ include '../includes/header.php';
                     </a>
                 </div>
             </div>
+            <div class="admin-card">
+    <div class="admin-card-top">
+        <div class="admin-card-header">
+            <div class="admin-icon">🛡️</div>
+            <span class="admin-badge">Seguridad</span>
+        </div>
+
+        <h3>Centro de seguridad</h3>
+
+        <p>
+            Monitoreá intentos de acceso, IPs sospechosas,
+            bloqueos temporales y actividad de autenticación.
+        </p>
+    </div>
+
+    <div class="admin-card-actions">
+        <a href="/proyecto_cava_Noble/admin/seguridad.php" class="btn btn-primary">
+            Ver seguridad
+        </a>
+    </div>
+</div>
 
         </div>
 

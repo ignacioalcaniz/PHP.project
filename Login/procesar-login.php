@@ -4,6 +4,7 @@ require_once '../includes/session.php';
 require_once '../includes/security.php';
 require_once '../includes/remember.php';
 require_once '../includes/rate-limit.php';
+require_once '../includes/captcha.php';
 require_once '../config/database.php';
 
 startSecureSession();
@@ -38,6 +39,11 @@ if (isLoginBlocked($email)) {
     redirect('/proyecto_cava_Noble/Login/login.php?blocked=1');
 }
 
+if (!verifyTurnstileToken()) {
+    registerLoginAttempt($email, false);
+    redirect('/proyecto_cava_Noble/Login/login.php?captcha=1');
+}
+
 $sql = "
     SELECT *
     FROM usuarios
@@ -55,46 +61,25 @@ if (
     !$usuario ||
     !password_verify($password, $usuario['password'])
 ) {
-
-    registerLoginAttempt(
-        $email,
-        false
-    );
-
+    registerLoginAttempt($email, false);
     redirect('/proyecto_cava_Noble/Login/login.php?error=1');
 }
 
 session_regenerate_id(true);
 
-$_SESSION['usuario_id'] =
-    (int)$usuario['id'];
-
-$_SESSION['usuario_nombre'] =
-    $usuario['nombre'];
-
-$_SESSION['usuario_email'] =
-    $usuario['email'];
-
-$_SESSION['usuario_rol'] =
-    $usuario['rol'] ?? 'cliente';
-
-$_SESSION['login_time'] =
-    time();
-
-$_SESSION['last_activity'] =
-    time();
+$_SESSION['usuario_id'] = (int)$usuario['id'];
+$_SESSION['usuario_nombre'] = $usuario['nombre'];
+$_SESSION['usuario_email'] = $usuario['email'];
+$_SESSION['usuario_rol'] = $usuario['rol'] ?? 'cliente';
+$_SESSION['login_time'] = time();
+$_SESSION['last_activity'] = time();
 
 unset($_SESSION['csrf_token']);
 
-registerLoginAttempt(
-    $email,
-    true
-);
+registerLoginAttempt($email, true);
 
 if ($rememberMe) {
-    createRememberToken(
-        (int)$usuario['id']
-    );
+    createRememberToken((int)$usuario['id']);
 } else {
     clearRememberCookie();
 }

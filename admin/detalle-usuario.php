@@ -60,41 +60,54 @@ $csrfToken = generateCsrfToken();
 include '../includes/header.php';
 ?>
 
-<main class="section">
+<main class="section admin-shell">
     <div class="container">
 
         <div class="section-header">
+            <span class="section-kicker">Clientes</span>
             <h2>Detalle de usuario</h2>
-            <p>Información del cliente, permisos y actividad comercial.</p>
+            <p>Información del cliente, permisos, actividad comercial e historial de pedidos.</p>
         </div>
 
-        <div class="info-cards">
-            <div class="info-card">
-                <span class="admin-badge">Usuario</span>
-                <h3><?php echo e($usuario['nombre'] . ' ' . $usuario['apellido']); ?></h3>
-                <p><?php echo e($usuario['email']); ?></p>
-                <p><strong>Rol actual:</strong> <?php echo e($usuario['rol']); ?></p>
-            </div>
+        <div class="admin-detail-layout">
 
-            <div class="info-card">
+            <section class="admin-profile-card">
+                <div class="admin-profile-avatar">
+                    <?php echo e(strtoupper(substr($usuario['nombre'], 0, 1))); ?>
+                </div>
+
+                <div>
+                    <span class="admin-badge"><?php echo e($usuario['rol']); ?></span>
+                    <h3><?php echo e($usuario['nombre'] . ' ' . $usuario['apellido']); ?></h3>
+                    <p><?php echo e($usuario['email']); ?></p>
+                </div>
+            </section>
+
+            <section class="admin-profile-card">
                 <span class="admin-badge">Compras</span>
                 <h3><?php echo (int)$usuario['total_pedidos']; ?> pedidos</h3>
-                <p>Total gastado: $<?php echo number_format($usuario['total_gastado'], 0, ',', '.'); ?></p>
-            </div>
+                <p>Total gastado: <strong>$<?php echo number_format($usuario['total_gastado'], 0, ',', '.'); ?></strong></p>
+            </section>
 
-            <div class="info-card">
+            <section class="admin-profile-card">
                 <span class="admin-badge">Seguridad</span>
-                <h3>Gestión de rol</h3>
-                <p>Los permisos del panel dependen del rol del usuario.</p>
-            </div>
+                <h3>Permisos del usuario</h3>
+                <p>El acceso al panel se define mediante el rol asignado.</p>
+            </section>
+
         </div>
 
         <br><br>
 
-        <div class="form-container" style="max-width:700px;">
-            <h2>Actualizar rol</h2>
+        <div class="admin-report-panel">
+            <div class="admin-panel-header">
+                <div>
+                    <h2>Actualizar rol</h2>
+                    <p>Modificá los permisos del usuario dentro del sistema.</p>
+                </div>
+            </div>
 
-            <form action="/proyecto_cava_Noble/admin/actualizar-rol-usuario.php" method="POST" class="auth-form">
+            <form action="/proyecto_cava_Noble/admin/actualizar-rol-usuario.php" method="POST" class="auth-form admin-role-form">
                 <input type="hidden" name="csrf_token" value="<?php echo e($csrfToken); ?>">
                 <input type="hidden" name="usuario_id" value="<?php echo (int)$usuario['id']; ?>">
 
@@ -114,34 +127,47 @@ include '../includes/header.php';
 
         <br><br>
 
-        <div class="cart-box" style="max-width:100%;">
-            <h2>Historial de pedidos</h2>
-            <br>
+        <div class="admin-report-panel">
+            <div class="admin-panel-header">
+                <div>
+                    <h2>Historial de pedidos</h2>
+                    <p>Pedidos realizados por este usuario.</p>
+                </div>
+            </div>
 
             <?php if (empty($pedidos)): ?>
-                <p>Este usuario todavía no tiene pedidos registrados.</p>
+
+                <div class="admin-empty-state">
+                    <h3>Sin pedidos todavía</h3>
+                    <p>Este usuario no tiene pedidos registrados.</p>
+                </div>
+
             <?php else: ?>
-                <?php foreach ($pedidos as $pedido): ?>
-                    <div class="cart-item">
-                        <div>
-                            <h3>Pedido #<?php echo (int)$pedido['id']; ?></h3>
-                            <p><strong>Fecha:</strong> <?php echo e($pedido['fecha_pedido']); ?></p>
-                            <p><strong>Método de pago:</strong> <?php echo e($pedido['metodo_pago']); ?></p>
-                        </div>
 
-                        <div style="display:flex; flex-direction:column; gap:10px; align-items:flex-end;">
-                            <span class="admin-badge"><?php echo e($pedido['estado']); ?></span>
-                            <strong>$<?php echo number_format($pedido['total'], 0, ',', '.'); ?></strong>
+                <div class="admin-list">
+                    <?php foreach ($pedidos as $pedido): ?>
+                        <article class="admin-list-row">
+                            <div>
+                                <h3>Pedido #<?php echo (int)$pedido['id']; ?></h3>
+                                <p><strong>Fecha:</strong> <?php echo e($pedido['fecha_pedido']); ?></p>
+                                <p><strong>Método de pago:</strong> <?php echo e($pedido['metodo_pago']); ?></p>
+                            </div>
 
-                            <a
-                                href="/proyecto_cava_Noble/admin/detalle-pedido.php?id=<?php echo (int)$pedido['id']; ?>"
-                                class="btn-card"
-                            >
-                                Ver pedido
-                            </a>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
+                            <div class="admin-list-actions">
+                                <span class="admin-badge"><?php echo e($pedido['estado']); ?></span>
+                                <strong>$<?php echo number_format($pedido['total'], 0, ',', '.'); ?></strong>
+
+                                <a
+                                    href="/proyecto_cava_Noble/admin/detalle-pedido.php?id=<?php echo (int)$pedido['id']; ?>"
+                                    class="btn-card"
+                                >
+                                    Ver pedido
+                                </a>
+                            </div>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
+
             <?php endif; ?>
         </div>
 
@@ -150,6 +176,7 @@ include '../includes/header.php';
         <a href="/proyecto_cava_Noble/admin/usuarios.php" class="btn btn-secondary">
             Volver a usuarios
         </a>
+
     </div>
 </main>
 

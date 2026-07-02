@@ -1,6 +1,7 @@
 <?php
 require_once '../includes/session.php';
 require_once '../includes/security.php';
+require_once '../includes/captcha.php';
 
 startSecureSession();
 
@@ -34,12 +35,17 @@ include '../includes/header.php';
                 </p>
             <?php endif; ?>
 
+            <?php if (isset($_GET['captcha'])): ?>
+                <p style="color:#8b0000; font-weight:700;">
+                    La validación de seguridad falló. Intentá nuevamente.
+                </p>
+            <?php endif; ?>
+
             <form
                 action="/proyecto_cava_Noble/Login/procesar-login.php"
                 method="POST"
                 class="auth-form"
             >
-
                 <input
                     type="hidden"
                     name="csrf_token"
@@ -48,7 +54,6 @@ include '../includes/header.php';
 
                 <div class="form-group">
                     <label>Email</label>
-
                     <input
                         type="email"
                         name="email"
@@ -59,7 +64,6 @@ include '../includes/header.php';
 
                 <div class="form-group">
                     <label>Contraseña</label>
-
                     <input
                         type="password"
                         name="password"
@@ -77,13 +81,14 @@ include '../includes/header.php';
                     Recordarme por 30 días
                 </label>
 
+                <?php renderTurnstileWidget(); ?>
+
                 <button
                     type="submit"
                     class="btn btn-primary"
                 >
                     Ingresar
                 </button>
-
             </form>
 
             <br>

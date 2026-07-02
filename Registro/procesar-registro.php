@@ -1,10 +1,10 @@
 <?php
+require_once '../includes/session.php';
 require_once '../includes/security.php';
+require_once '../includes/captcha.php';
 require_once '../config/database.php';
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+startSecureSession();
 
 if (!isPostRequest()) {
     redirect('/proyecto_cava_Noble/Registro/registro.php');
@@ -15,6 +15,10 @@ if (
     !validateCsrfToken($_POST['csrf_token'])
 ) {
     die('Token CSRF inválido.');
+}
+
+if (!verifyTurnstileToken()) {
+    redirect('/proyecto_cava_Noble/Registro/registro.php?captcha=1');
 }
 
 $pdo = conectarDB();
@@ -72,12 +76,10 @@ $sql = "
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->bindParam(':nombre', $nombre);
 $stmt->bindParam(':apellido', $apellido);
 $stmt->bindParam(':email', $email);
 $stmt->bindParam(':password', $passwordHash);
-
 $stmt->execute();
 
 unset($_SESSION['csrf_token']);

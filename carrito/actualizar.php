@@ -6,7 +6,7 @@ require_once '../config/database.php';
 startSecureSession();
 
 if (!isPostRequest()) {
-    redirect('/proyecto_cava_Noble/pages/catalogo.php');
+    redirect('/proyecto_cava_Noble/carrito.php');
 }
 
 if (
@@ -19,14 +19,14 @@ if (
 $pdo = conectarDB();
 
 $productoId = (int)($_POST['producto_id'] ?? 0);
-$cantidad = (int)($_POST['cantidad'] ?? 1);
+$cantidad = (int)($_POST['cantidad'] ?? 0);
 
 if ($productoId <= 0 || $cantidad <= 0) {
-    redirect('/proyecto_cava_Noble/pages/catalogo.php');
+    redirect('/proyecto_cava_Noble/carrito.php');
 }
 
 $sql = "
-    SELECT id, stock
+    SELECT stock
     FROM productos
     WHERE id = :id
     LIMIT 1
@@ -38,26 +38,16 @@ $stmt->execute();
 
 $producto = $stmt->fetch();
 
-if (!$producto || (int)$producto['stock'] <= 0) {
-    redirect('/proyecto_cava_Noble/pages/catalogo.php');
+if (!$producto || !isset($_SESSION['carrito'][$productoId])) {
+    redirect('/proyecto_cava_Noble/carrito.php');
 }
 
 $cantidad = min($cantidad, (int)$producto['stock']);
 
-if (!isset($_SESSION['carrito'])) {
-    $_SESSION['carrito'] = [];
-}
-
-if (isset($_SESSION['carrito'][$productoId])) {
-    $_SESSION['carrito'][$productoId]['cantidad'] += $cantidad;
+if ($cantidad <= 0) {
+    unset($_SESSION['carrito'][$productoId]);
 } else {
-    $_SESSION['carrito'][$productoId] = [
-        'cantidad' => $cantidad
-    ];
-}
-
-if ($_SESSION['carrito'][$productoId]['cantidad'] > (int)$producto['stock']) {
-    $_SESSION['carrito'][$productoId]['cantidad'] = (int)$producto['stock'];
+    $_SESSION['carrito'][$productoId]['cantidad'] = $cantidad;
 }
 
 redirect('/proyecto_cava_Noble/carrito.php');

@@ -1,17 +1,16 @@
 <?php
+require_once '../includes/session.php';
 require_once '../includes/security.php';
 require_once '../config/database.php';
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+startSecureSession();
 
 $pdo = conectarDB();
 
 $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 
 if ($id <= 0) {
-    die('Producto no válido.');
+    redirect('/proyecto_cava_Noble/pages/catalogo.php');
 }
 
 $sql = "
@@ -36,7 +35,7 @@ $stmt->execute();
 $producto = $stmt->fetch();
 
 if (!$producto) {
-    die('Producto no encontrado.');
+    redirect('/proyecto_cava_Noble/pages/catalogo.php');
 }
 
 $descuento = 0;
@@ -45,7 +44,7 @@ if ((int)$producto['destacado'] === 1) {
     $descuento = 1500;
 }
 
-$precioFinal = max(0, $producto['precio'] - $descuento);
+$precioFinal = max(0, (float)$producto['precio'] - $descuento);
 $csrfToken = generateCsrfToken();
 
 include '../includes/header.php';
@@ -85,40 +84,13 @@ include '../includes/header.php';
                 <p><?php echo e($producto['descripcion']); ?></p>
 
                 <ul class="product-data">
-                    <li>
-                        <strong>Bodega:</strong>
-                        <?php echo e($producto['bodega_nombre'] ?? $producto['bodega']); ?>
-                    </li>
-
-                    <li>
-                        <strong>País:</strong>
-                        <?php echo e($producto['bodega_pais'] ?? $producto['pais']); ?>
-                    </li>
-
-                    <li>
-                        <strong>Región:</strong>
-                        <?php echo e($producto['bodega_region'] ?? $producto['region']); ?>
-                    </li>
-
-                    <li>
-                        <strong>Cepa:</strong>
-                        <?php echo e($producto['cepa']); ?>
-                    </li>
-
-                    <li>
-                        <strong>Añada:</strong>
-                        <?php echo e($producto['anada']); ?>
-                    </li>
-
-                    <li>
-                        <strong>Categoría:</strong>
-                        <?php echo e($producto['categoria'] ?? 'Sin categoría'); ?>
-                    </li>
-
-                    <li>
-                        <strong>Stock:</strong>
-                        <?php echo (int)$producto['stock']; ?> unidades
-                    </li>
+                    <li><strong>Bodega:</strong> <?php echo e($producto['bodega_nombre'] ?? $producto['bodega']); ?></li>
+                    <li><strong>País:</strong> <?php echo e($producto['bodega_pais'] ?? $producto['pais']); ?></li>
+                    <li><strong>Región:</strong> <?php echo e($producto['bodega_region'] ?? $producto['region']); ?></li>
+                    <li><strong>Cepa:</strong> <?php echo e($producto['cepa']); ?></li>
+                    <li><strong>Añada:</strong> <?php echo e($producto['anada']); ?></li>
+                    <li><strong>Categoría:</strong> <?php echo e($producto['categoria'] ?? 'Sin categoría'); ?></li>
+                    <li><strong>Stock:</strong> <?php echo (int)$producto['stock']; ?> unidades</li>
                 </ul>
 
                 <?php if (!empty($producto['bodega_descripcion'])): ?>
@@ -130,21 +102,11 @@ include '../includes/header.php';
 
                 <?php if ((int)$producto['stock'] > 0): ?>
                     <form action="/proyecto_cava_Noble/carrito/agregar.php" method="POST" class="auth-form">
-                        <input
-                            type="hidden"
-                            name="csrf_token"
-                            value="<?php echo e($csrfToken); ?>"
-                        >
-
-                        <input
-                            type="hidden"
-                            name="producto_id"
-                            value="<?php echo (int)$producto['id']; ?>"
-                        >
+                        <input type="hidden" name="csrf_token" value="<?php echo e($csrfToken); ?>">
+                        <input type="hidden" name="producto_id" value="<?php echo (int)$producto['id']; ?>">
 
                         <div class="form-group">
                             <label for="cantidad">Cantidad</label>
-
                             <input
                                 type="number"
                                 id="cantidad"
@@ -162,9 +124,7 @@ include '../includes/header.php';
                     </form>
                 <?php else: ?>
                     <p><strong>Producto sin stock disponible.</strong></p>
-
                     <br>
-
                     <a href="/proyecto_cava_Noble/pages/catalogo.php" class="btn btn-secondary">
                         Volver al catálogo
                     </a>

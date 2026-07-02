@@ -1,11 +1,10 @@
 <?php
 require_once '../includes/auth.php';
 require_once '../includes/security.php';
+require_once '../includes/captcha.php';
 require_once '../config/database.php';
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+requireLogin();
 
 if (!isPostRequest()) {
     redirect('/proyecto_cava_Noble/carrito.php');
@@ -18,72 +17,66 @@ if (
     die('Token CSRF inválido.');
 }
 
-if (empty($_SESSION['carrito'])) {
+if (
+    empty($_POST['checkout_token']) ||
+    empty($_SESSION['checkout_token']) ||
+    !hash_equals($_SESSION['checkout_token'], $_POST['checkout_token'])
+) {
+    redirect('/proyecto_cava_Noble/carrito.php');
+}
+
+if (!verifyTurnstileToken()) {
+    redirect('/proyecto_cava_Noble/pages/checkout.php?captcha=1');
+}
+
+if (empty($_SESSION['carrito']) || !is_array($_SESSION['carrito'])) {
     redirect('/proyecto_cava_Noble/carrito.php');
 }
 
 $pdo = conectarDB();
 
+$usuarioId = (int)$_SESSION['usuario_id'];
 $nombreCliente = trim($_POST['nombre_cliente'] ?? '');
 $emailCliente = trim($_POST['email_cliente'] ?? '');
 $telefono = trim($_POST['telefono'] ?? '');
 $direccion = trim($_POST['direccion'] ?? '');
-$ciudad = trim($_POST['ciudad'] ?? '');
-$provincia = trim($_POST['provincia'] ?? '');
 $metodoPago = trim($_POST['metodo_pago'] ?? '');
 
-$errores = [];
+if (
+    $nombreCliente === '' ||
+    $emailCliente === '' ||
+    $telefono === '' ||
+    $direccion === '' ||
+    $metodoPago === '' ||
+    !filter_var($emailCliente, FILTER_VALIDATE_EMAIL)
+) {
+    redirect('/proyecto_cava_Noble/pages/checkout.php?error=1');
+}
 
-if ($nombreCliente === '') $errores[] = 'El nombre es obligatorio.';
-if ($emailCliente === '') $errores[] = 'El email es obligatorio.';
-if (!filter_var($emailCliente, FILTER_VALIDATE_EMAIL)) $errores[] = 'El email no es válido.';
-if ($telefono === '') $errores[] = 'El teléfono es obligatorio.';
-if ($direccion === '') $errores[] = 'La dirección es obligatoria.';
-if ($ciudad === '') $errores[] = 'La ciudad es obligatoria.';
-if ($provincia === '') $errores[] = 'La provincia es obligatoria.';
-if ($metodoPago === '') $errores[] = 'El método de pago es obligatorio.';
-
-if (!empty($errores)) {
-    include '../includes/header.php';
-    ?>
-
-    <main class="section">
-        <div class="container">
-            <div class="form-container">
-                <h2>Error al procesar el pedido</h2>
-
-                <ul>
-                    <?php foreach ($errores as $error): ?>
-                        <li><?php echo e($error); ?></li>
-                    <?php endforeach; ?>
-                </ul>
-
-                <br>
-
-                <a href="/proyecto_cava_Noble/pages/checkout.php" class="btn btn-primary">
-                    Volver al checkout
-                </a>
-            </div>
-        </div>
-    </main>
-
-    <?php
-    include '../includes/footer.php';
-    exit;
+if (!in_array($metodoPago, ['transferencia', 'efectivo'], true)) {
+    redirect('/proyecto_cava_Noble/pages/checkout.php?error=1');
 }
 
 try {
     $pdo->beginTransaction();
 
-    $itemsPedido = [];
+    $itemsFinales = [];
     $totalGeneral = 0;
 
     foreach ($_SESSION['carrito'] as $productoId => $item) {
+        $productoId = (int)$productoId;
+        $cantidad = (int)($item['cantidad'] ?? 0);
+
+        if ($productoId <= 0 || $cantidad <= 0) {
+            continue;
+        }
+
         $sqlProducto = "
             SELECT id, nombre, precio, stock
             FROM productos
             WHERE id = :id
             LIMIT 1
+            FOR UPDATE
         ";
 
         $stmtProducto = $pdo->prepare($sqlProducto);
@@ -92,33 +85,29 @@ try {
 
         $producto = $stmtProducto->fetch();
 
-        if (!$producto) {
-            continue;
+        if (!$producto || (int)$producto['stock'] < $cantidad) {
+            $pdo->rollBack();
+            redirect('/proyecto_cava_Noble/pages/checkout.php?stock=1');
         }
 
-        $cantidad = min((int)$item['cantidad'], (int)$producto['stock']);
-
-        if ($cantidad <= 0) {
-            continue;
-        }
-
-        $subtotal = $producto['precio'] * $cantidad;
+        $subtotal = (float)$producto['precio'] * $cantidad;
         $totalGeneral += $subtotal;
 
-        $itemsPedido[] = [
-            'producto_id' => $producto['id'],
-            'nombre_producto' => $producto['nombre'],
-            'precio_unitario' => $producto['precio'],
+        $itemsFinales[] = [
+            'id' => (int)$producto['id'],
+            'nombre' => $producto['nombre'],
+            'precio' => (float)$producto['precio'],
             'cantidad' => $cantidad,
             'subtotal' => $subtotal
         ];
     }
 
-    if (empty($itemsPedido)) {
-        throw new Exception('No hay productos disponibles para procesar el pedido.');
+    if (empty($itemsFinales)) {
+        $pdo->rollBack();
+        redirect('/proyecto_cava_Noble/carrito.php');
     }
 
-    $usuarioId = $_SESSION['usuario_id'] ?? null;
+    $estado = 'pendiente';
 
     $sqlPedido = "
         INSERT INTO pedidos (
@@ -127,12 +116,9 @@ try {
             email_cliente,
             telefono,
             direccion,
-            ciudad,
-            provincia,
             metodo_pago,
             estado,
-            total,
-            fecha_pedido
+            total
         )
         VALUES (
             :usuario_id,
@@ -140,111 +126,80 @@ try {
             :email_cliente,
             :telefono,
             :direccion,
-            :ciudad,
-            :provincia,
             :metodo_pago,
-            'pendiente',
-            :total,
-            NOW()
+            :estado,
+            :total
         )
     ";
 
     $stmtPedido = $pdo->prepare($sqlPedido);
-
-    if ($usuarioId) {
-        $stmtPedido->bindParam(':usuario_id', $usuarioId, PDO::PARAM_INT);
-    } else {
-        $stmtPedido->bindValue(':usuario_id', null, PDO::PARAM_NULL);
-    }
-
+    $stmtPedido->bindParam(':usuario_id', $usuarioId, PDO::PARAM_INT);
     $stmtPedido->bindParam(':nombre_cliente', $nombreCliente);
     $stmtPedido->bindParam(':email_cliente', $emailCliente);
     $stmtPedido->bindParam(':telefono', $telefono);
     $stmtPedido->bindParam(':direccion', $direccion);
-    $stmtPedido->bindParam(':ciudad', $ciudad);
-    $stmtPedido->bindParam(':provincia', $provincia);
     $stmtPedido->bindParam(':metodo_pago', $metodoPago);
+    $stmtPedido->bindParam(':estado', $estado);
     $stmtPedido->bindParam(':total', $totalGeneral);
-
     $stmtPedido->execute();
 
-    $pedidoId = $pdo->lastInsertId();
+    $pedidoId = (int)$pdo->lastInsertId();
 
-    $sqlItem = "
-        INSERT INTO pedido_items (
-            pedido_id,
-            producto_id,
-            nombre_producto,
-            precio_unitario,
-            cantidad,
-            subtotal
-        )
-        VALUES (
-            :pedido_id,
-            :producto_id,
-            :nombre_producto,
-            :precio_unitario,
-            :cantidad,
-            :subtotal
-        )
-    ";
+    foreach ($itemsFinales as $item) {
+        $sqlItem = "
+            INSERT INTO pedido_items (
+                pedido_id,
+                producto_id,
+                nombre_producto,
+                precio,
+                cantidad,
+                subtotal
+            )
+            VALUES (
+                :pedido_id,
+                :producto_id,
+                :nombre_producto,
+                :precio,
+                :cantidad,
+                :subtotal
+            )
+        ";
 
-    $stmtItem = $pdo->prepare($sqlItem);
-
-    $sqlStock = "
-        UPDATE productos
-        SET stock = stock - :cantidad
-        WHERE id = :producto_id
-        AND stock >= :cantidad
-    ";
-
-    $stmtStock = $pdo->prepare($sqlStock);
-
-    foreach ($itemsPedido as $item) {
+        $stmtItem = $pdo->prepare($sqlItem);
         $stmtItem->bindParam(':pedido_id', $pedidoId, PDO::PARAM_INT);
-        $stmtItem->bindParam(':producto_id', $item['producto_id'], PDO::PARAM_INT);
-        $stmtItem->bindParam(':nombre_producto', $item['nombre_producto']);
-        $stmtItem->bindParam(':precio_unitario', $item['precio_unitario']);
+        $stmtItem->bindParam(':producto_id', $item['id'], PDO::PARAM_INT);
+        $stmtItem->bindParam(':nombre_producto', $item['nombre']);
+        $stmtItem->bindParam(':precio', $item['precio']);
         $stmtItem->bindParam(':cantidad', $item['cantidad'], PDO::PARAM_INT);
         $stmtItem->bindParam(':subtotal', $item['subtotal']);
         $stmtItem->execute();
 
+        $sqlStock = "
+            UPDATE productos
+            SET stock = stock - :cantidad
+            WHERE id = :id
+        ";
+
+        $stmtStock = $pdo->prepare($sqlStock);
         $stmtStock->bindParam(':cantidad', $item['cantidad'], PDO::PARAM_INT);
-        $stmtStock->bindParam(':producto_id', $item['producto_id'], PDO::PARAM_INT);
+        $stmtStock->bindParam(':id', $item['id'], PDO::PARAM_INT);
         $stmtStock->execute();
     }
 
     $pdo->commit();
 
     unset($_SESSION['carrito']);
+    unset($_SESSION['checkout_token']);
     unset($_SESSION['csrf_token']);
 
     $_SESSION['ultimo_pedido_id'] = $pedidoId;
 
-    redirect('/proyecto_cava_Noble/pages/gracias.php');
+redirect('/proyecto_cava_Noble/pages/gracias.php');
 
 } catch (Exception $e) {
-    $pdo->rollBack();
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
 
-    include '../includes/header.php';
-    ?>
-
-    <main class="section">
-        <div class="container">
-            <div class="form-container">
-                <h2>No se pudo completar el pedido</h2>
-                <p><?php echo e($e->getMessage()); ?></p>
-
-                <br>
-
-                <a href="/proyecto_cava_Noble/carrito.php" class="btn btn-primary">
-                    Volver al carrito
-                </a>
-            </div>
-        </div>
-    </main>
-
-    <?php
-    include '../includes/footer.php';
-    exit;
+    redirect('/proyecto_cava_Noble/pages/checkout.php?error=1');
 }
