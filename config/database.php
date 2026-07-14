@@ -1,65 +1,68 @@
-
 <?php
+
+declare(strict_types=1);
+
 require_once __DIR__ . '/app.php';
 
-function conectarDB() {
+function conectarDB(): PDO
+{
+    static $pdo = null;
 
-    /*
-        Detecta automáticamente si estamos:
-        - en localhost (XAMPP)
-        - o en producción (InfinityFree)
-    */
-
-    $servidor = $_SERVER['HTTP_HOST'] ?? '';
-
-    if (
-        strpos($servidor, 'localhost') !== false ||
-        strpos($servidor, '127.0.0.1') !== false
-    ) {
-
-        /*
-            ENTORNO LOCAL
-        */
-
-        $host = 'localhost';
-        $dbname = 'cava_noble';
-        $usuario = 'root';
-        $password = '';
-
-    } else {
-
-        /*
-            PRODUCCIÓN / HOSTING
-        */
-
-        $host = 'sql305.infinityfree.com';
-        $dbname = 'if0_41893077_Cava_Noble';
-        $usuario = 'if0_41893077';
-        $password = 'Secundaria2015';
+    if ($pdo instanceof PDO) {
+        return $pdo;
     }
 
-    try {
+    $host = (string)env('DB_HOST', '127.0.0.1');
+    $port = (int)env('DB_PORT', 3306);
+    $database = (string)env('DB_DATABASE', '');
+    $username = (string)env('DB_USERNAME', 'root');
+    $password = (string)env('DB_PASSWORD', '');
 
-        $pdo = new PDO(
-            "mysql:host=$host;dbname=$dbname;charset=utf8mb4",
-            $usuario,
-            $password
+    if ($database === '') {
+        throw new RuntimeException(
+            'La variable DB_DATABASE no está configurada.'
         );
+    }
 
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $dsn = sprintf(
+        'mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4',
+        $host,
+        $port,
+        $database
+    );
 
-        $pdo->setAttribute(
-            PDO::ATTR_DEFAULT_FETCH_MODE,
-            PDO::FETCH_ASSOC
+    try {
+        $pdo = new PDO(
+            $dsn,
+            $username,
+            $password,
+            [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES => false,
+                PDO::ATTR_STRINGIFY_FETCHES => false,
+                PDO::MYSQL_ATTR_INIT_COMMAND =>
+                    "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
+            ]
         );
 
         return $pdo;
+    } catch (PDOException $exception) {
+        error_log(
+            '[Cava Noble] Error de conexión MySQL: ' .
+            $exception->getMessage()
+        );
 
-    } catch (PDOException $e) {
+        if (APP_DEBUG) {
+            throw new RuntimeException(
+                'Error de conexión: ' . $exception->getMessage(),
+                0,
+                $exception
+            );
+        }
 
-        die(
-            "Error de conexión: " .
-            $e->getMessage()
+        throw new RuntimeException(
+            'No se pudo conectar con la base de datos.'
         );
     }
 }
