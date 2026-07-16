@@ -1,5 +1,7 @@
 <?php
+
 require_once '../includes/auth.php';
+
 requireAdmin();
 
 include '../includes/header.php';
@@ -9,17 +11,23 @@ include '../includes/header.php';
     <div class="container">
 
         <div class="section-header">
+            <span class="section-kicker">Administración</span>
+
             <h2>Panel administrador</h2>
+
             <p>
                 Centro de gestión de Cava Noble: catálogo, ventas, clientes,
-                reportes, auditoría y operaciones internas del e-commerce.
+                reportes, seguridad, auditoría y operaciones internas del e-commerce.
             </p>
         </div>
 
         <div class="admin-grid">
 
-            <div class="admin-card">
+            <!-- PRODUCTOS -->
+
+            <article class="admin-card">
                 <div class="admin-card-top">
+
                     <div class="admin-card-header">
                         <div class="admin-icon">🍷</div>
                         <span class="admin-badge">Catálogo</span>
@@ -29,19 +37,25 @@ include '../includes/header.php';
 
                     <p>
                         Gestioná vinos, precios, stock, imágenes,
-                        destacados y catálogo general.
+                        productos destacados y disponibilidad del catálogo.
                     </p>
                 </div>
 
                 <div class="admin-card-actions">
-                    <a href="/proyecto_cava_Noble/admin/productos.php" class="btn btn-primary">
+                    <a
+                        href="/proyecto_cava_Noble/admin/productos.php"
+                        class="btn btn-primary"
+                    >
                         Administrar productos
                     </a>
                 </div>
-            </div>
+            </article>
 
-            <div class="admin-card">
+            <!-- CATEGORÍAS -->
+
+            <article class="admin-card">
                 <div class="admin-card-top">
+
                     <div class="admin-card-header">
                         <div class="admin-icon">🏷️</div>
                         <span class="admin-badge">Organización</span>
@@ -56,14 +70,20 @@ include '../includes/header.php';
                 </div>
 
                 <div class="admin-card-actions">
-                    <a href="/proyecto_cava_Noble/admin/categorias.php" class="btn btn-primary">
+                    <a
+                        href="/proyecto_cava_Noble/admin/categorias.php"
+                        class="btn btn-primary"
+                    >
                         Administrar categorías
                     </a>
                 </div>
-            </div>
+            </article>
 
-            <div class="admin-card">
+            <!-- BODEGAS -->
+
+            <article class="admin-card">
                 <div class="admin-card-top">
+
                     <div class="admin-card-header">
                         <div class="admin-icon">🏛️</div>
                         <span class="admin-badge">Origen</span>
@@ -73,41 +93,70 @@ include '../includes/header.php';
 
                     <p>
                         Gestioná bodegas nacionales e internacionales,
-                        regiones y descripciones comerciales.
+                        países, regiones y descripciones comerciales.
                     </p>
                 </div>
 
                 <div class="admin-card-actions">
-                    <a href="/proyecto_cava_Noble/admin/bodegas.php" class="btn btn-primary">
+                    <a
+                        href="/proyecto_cava_Noble/admin/bodegas.php"
+                        class="btn btn-primary"
+                    >
                         Administrar bodegas
                     </a>
                 </div>
-            </div>
+            </article>
 
-            <div class="admin-card">
+            <!-- GESTIÓN PROFESIONAL DE PEDIDOS -->
+
+            <article class="admin-card">
                 <div class="admin-card-top">
+
                     <div class="admin-card-header">
                         <div class="admin-icon">📦</div>
                         <span class="admin-badge">Ventas</span>
                     </div>
 
-                    <h3>Pedidos</h3>
+                    <h3>Gestión de pedidos</h3>
 
                     <p>
-                        Visualizá compras, clientes, productos vendidos
-                        y actualizá estados de pedidos.
+                        Administrá el flujo completo de compra:
+                        generación del pedido, seguimiento operativo,
+                        actualización de estados y pedidos finalizados.
                     </p>
                 </div>
 
                 <div class="admin-card-actions">
-                    <a href="/proyecto_cava_Noble/admin/pedidos.php" class="btn btn-primary">
-                        Administrar pedidos
-                    </a>
-                </div>
-            </div>
 
-            <div class="admin-card">
+                    <a
+                        href="/proyecto_cava_Noble/pages/catalogo.php"
+                        class="btn btn-primary"
+                    >
+                        Realizar pedido
+                    </a>
+
+                    <a
+                        href="/proyecto_cava_Noble/admin/pedidos.php?vista=activos"
+                        class="btn btn-secondary"
+                    >
+                        Ver pedidos activos
+                    </a>
+
+                    <a
+                        href="/proyecto_cava_Noble/admin/pedidos.php?vista=finalizados"
+                        class="btn btn-secondary"
+                    >
+                        Pedidos finalizados
+                    </a>
+
+                </div>
+            </article>
+
+            <!-- USUARIOS -->
+
+            <article class="admin-card">
                 <div class="admin-card-top">
+
                     <div class="admin-card-header">
                         <div class="admin-icon">👥</div>
                         <span class="admin-badge">Clientes</span>
@@ -122,14 +171,20 @@ include '../includes/header.php';
                 </div>
 
                 <div class="admin-card-actions">
-                    <a href="/proyecto_cava_Noble/admin/usuarios.php" class="btn btn-primary">
+                    <a
+                        href="/proyecto_cava_Noble/admin/usuarios.php"
+                        class="btn btn-primary"
+                    >
                         Administrar usuarios
                     </a>
                 </div>
-            </div>
+            </article>
 
-            <div class="admin-card">
+            <!-- REPORTES -->
+
+            <article class="admin-card">
                 <div class="admin-card-top">
+
                     <div class="admin-card-header">
                         <div class="admin-icon">📊</div>
                         <span class="admin-badge">Analytics</span>
@@ -138,107 +193,133 @@ include '../includes/header.php';
                     <h3>Reportes</h3>
 
                     <p>
-                        Dashboard comercial con métricas,
-                        JOINs, GROUP BY y reportes avanzados.
+                        Consultá métricas comerciales, ventas,
+                        stock, productos destacados y rendimiento general.
                     </p>
                 </div>
 
                 <div class="admin-card-actions">
-                    <a href="/proyecto_cava_Noble/admin/reportes.php" class="btn btn-primary">
+                    <a
+                        href="/proyecto_cava_Noble/admin/reportes.php"
+                        class="btn btn-primary"
+                    >
                         Ver reportes
                     </a>
                 </div>
-            </div>
+            </article>
 
-            <div class="admin-card">
+            <!-- AUDITORÍA -->
+
+            <article class="admin-card">
                 <div class="admin-card-top">
+
                     <div class="admin-card-header">
                         <div class="admin-icon">📜</div>
-                        <span class="admin-badge">Seguridad</span>
+                        <span class="admin-badge">Auditoría</span>
                     </div>
 
-                    <h3>Auditoría</h3>
+                    <h3>Registro de actividad</h3>
 
                     <p>
-                        Consultá el historial de acciones realizadas
-                        por administradores dentro del sistema.
+                        Consultá las acciones administrativas realizadas
+                        sobre productos, categorías, bodegas, pedidos y usuarios.
                     </p>
                 </div>
 
                 <div class="admin-card-actions">
-                    <a href="/proyecto_cava_Noble/admin/logs.php" class="btn btn-primary">
+                    <a
+                        href="/proyecto_cava_Noble/admin/logs.php"
+                        class="btn btn-primary"
+                    >
                         Ver registros
                     </a>
                 </div>
-            </div>
-            <div class="admin-card">
-    <div class="admin-card-top">
-        <div class="admin-card-header">
-            <div class="admin-icon">🛡️</div>
-            <span class="admin-badge">Seguridad</span>
+            </article>
+
+            <!-- CENTRO DE SEGURIDAD -->
+
+            <article class="admin-card">
+                <div class="admin-card-top">
+
+                    <div class="admin-card-header">
+                        <div class="admin-icon">🛡️</div>
+                        <span class="admin-badge">Seguridad</span>
+                    </div>
+
+                    <h3>Centro de seguridad</h3>
+
+                    <p>
+                        Monitoreá intentos de acceso, IP sospechosas,
+                        bloqueos temporales y actividad de autenticación.
+                    </p>
+                </div>
+
+                <div class="admin-card-actions">
+                    <a
+                        href="/proyecto_cava_Noble/admin/seguridad.php"
+                        class="btn btn-primary"
+                    >
+                        Ver seguridad
+                    </a>
+                </div>
+            </article>
+
         </div>
 
-        <h3>Centro de seguridad</h3>
+        <!-- ESTADO DEL SISTEMA -->
 
-        <p>
-            Monitoreá intentos de acceso, IPs sospechosas,
-            bloqueos temporales y actividad de autenticación.
-        </p>
-    </div>
+        <section class="admin-status-panel">
 
-    <div class="admin-card-actions">
-        <a href="/proyecto_cava_Noble/admin/seguridad.php" class="btn btn-primary">
-            Ver seguridad
-        </a>
-    </div>
-</div>
-
-        </div>
-
-        <div class="admin-status-panel">
             <div class="admin-status-header">
                 <div>
                     <h2>Estado actual del sistema</h2>
-                    <p>Resumen técnico y funcional del e-commerce.</p>
+
+                    <p>
+                        Resumen técnico y funcional de la plataforma.
+                    </p>
                 </div>
             </div>
 
             <div class="admin-status-grid">
 
-                <div class="admin-status-card">
+                <article class="admin-status-card">
                     <h3>Catálogo relacional</h3>
-                    <p>
-                        Productos relacionados con categorías
-                        y bodegas mediante claves foráneas MySQL.
-                    </p>
-                </div>
 
-                <div class="admin-status-card">
-                    <h3>Pedidos reales</h3>
                     <p>
-                        El checkout genera pedidos, guarda items,
-                        calcula totales y administra estados.
+                        Productos relacionados con categorías y bodegas
+                        mediante claves foráneas y consultas preparadas en MySQL.
                     </p>
-                </div>
+                </article>
 
-                <div class="admin-status-card">
-                    <h3>Usuarios y roles</h3>
+                <article class="admin-status-card">
+                    <h3>Pedidos transaccionales</h3>
+
                     <p>
-                        Administración de clientes y permisos
-                        mediante roles de usuario.
+                        El checkout valida stock, genera pedidos e ítems,
+                        descuenta existencias y confirma todo dentro de una transacción.
                     </p>
-                </div>
+                </article>
 
-                <div class="admin-status-card">
+                <article class="admin-status-card">
+                    <h3>Flujo operativo</h3>
+
+                    <p>
+                        Los pedidos avanzan desde procesando hasta entregado,
+                        con vistas separadas para activos, finalizados y cancelados.
+                    </p>
+                </article>
+
+                <article class="admin-status-card">
                     <h3>Seguridad aplicada</h3>
+
                     <p>
                         Roles, sesiones seguras, CSRF, cookies HttpOnly,
-                        rate limiting, headers seguros y auditoría admin.
+                        Turnstile, rate limiting, bloqueo de IP y auditoría.
                     </p>
-                </div>
+                </article>
 
             </div>
-        </div>
+        </section>
 
     </div>
 </main>

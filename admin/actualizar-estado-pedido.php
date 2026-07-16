@@ -7,22 +7,42 @@ require_once '../config/database.php';
 
 requireAdmin();
 
+/*
+|--------------------------------------------------------------------------
+| Solo solicitudes POST
+|--------------------------------------------------------------------------
+*/
+
 if (!isPostRequest()) {
-    redirect('/proyecto_cava_Noble/admin/pedidos.php');
+    redirect('/proyecto_cava_Noble/admin/pedidos.php?vista=activos');
 }
 
+/*
+|--------------------------------------------------------------------------
+| Protección CSRF
+|--------------------------------------------------------------------------
+*/
+
+$csrfToken = $_POST['csrf_token'] ?? '';
+
 if (
-    !isset($_POST['csrf_token']) ||
-    !validateCsrfToken($_POST['csrf_token'])
+    !is_string($csrfToken) ||
+    $csrfToken === '' ||
+    !validateCsrfToken($csrfToken)
 ) {
     http_response_code(403);
     die('Token CSRF inválido.');
 }
 
-$pdo = conectarDB();
+/*
+|--------------------------------------------------------------------------
+| Datos recibidos
+|--------------------------------------------------------------------------
+*/
 
 $pedidoId = (int)($_POST['pedido_id'] ?? 0);
-$nuevoEstado = trim($_POST['estado'] ?? '');
+$nuevoEstado = trim((string)($_POST['estado'] ?? ''));
+$accion = trim((string)($_POST['accion'] ?? 'actualizar'));
 
 $estadosPermitidos = [
     'pendiente',
@@ -34,26 +54,52 @@ $estadosPermitidos = [
     'cancelado'
 ];
 
+$accionesPermitidas = [
+    'actualizar',
+    'finalizar'
+];
+
 if (
     $pedidoId <= 0 ||
-    !in_array($nuevoEstado, $estadosPermitidos, true)
+    !in_array($nuevoEstado, $estadosPermitidos, true) ||
+    !in_array($accion, $accionesPermitidas, true)
 ) {
-    redirect('/proyecto_cava_Noble/admin/pedidos.php');
+    redirect('/proyecto_cava_Noble/admin/pedidos.php?vista=activos&error=1');
 }
+
+/*
+|--------------------------------------------------------------------------
+| Validación de la finalización rápida
+|--------------------------------------------------------------------------
+|
+| Si la acción llegó desde el botón "Finalizar pedido", el único estado
+| permitido es "entregado". Esto impide manipular el campo oculto.
+|
+*/
+
+if (
+    $accion === 'finalizar' &&
+    $nuevoEstado !== 'entregado'
+) {
+    redirect('/proyecto_cava_Noble/admin/pedidos.php?vista=activos&error=1');
+}
+
+$pdo = conectarDB();
 
 try {
     $pdo->beginTransaction();
 
     /*
     |--------------------------------------------------------------------------
-    | Bloqueo del pedido
+    | Obtener y bloquear el pedido
     |--------------------------------------------------------------------------
     */
 
     $sqlPedido = "
         SELECT
             id,
-            estado
+            estado,
+            nombre_cliente
         FROM pedidos
         WHERE id = :id
         LIMIT 1
@@ -62,7 +108,7 @@ try {
 
     $stmtPedido = $pdo->prepare($sqlPedido);
 
-    $stmtPedido->bindParam(
+    $stmtPedido->bindValue(
         ':id',
         $pedidoId,
         PDO::PARAM_INT
@@ -75,24 +121,70 @@ try {
     if (!$pedido) {
         $pdo->rollBack();
 
-        redirect('/proyecto_cava_Noble/admin/pedidos.php');
+        redirect(
+            '/proyecto_cava_Noble/admin/pedidos.php?vista=activos&error=1'
+        );
     }
 
-    $estadoAnterior = $pedido['estado'];
+    $estadoAnterior = (string)$pedido['estado'];
+    $nombreCliente = (string)($pedido['nombre_cliente'] ?? '');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Evitar operaciones innecesarias
+    |--------------------------------------------------------------------------
+    */
 
     if ($estadoAnterior === $nuevoEstado) {
         $pdo->commit();
 
+        if ($accion === 'finalizar') {
+            redirect(
+                '/proyecto_cava_Noble/admin/pedidos.php' .
+                '?vista=finalizados&finalizado=1'
+            );
+        }
+
         redirect(
-            '/proyecto_cava_Noble/admin/detalle-pedido.php?id=' .
-            $pedidoId .
+            '/proyecto_cava_Noble/admin/detalle-pedido.php' .
+            '?id=' . $pedidoId .
             '&actualizado=1'
         );
     }
 
     /*
     |--------------------------------------------------------------------------
-    | Items del pedido
+    | Reglas de negocio
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        $estadoAnterior === 'entregado' &&
+        $accion === 'finalizar'
+    ) {
+        $pdo->commit();
+
+        redirect(
+            '/proyecto_cava_Noble/admin/pedidos.php' .
+            '?vista=finalizados&finalizado=1'
+        );
+    }
+
+    if (
+        $estadoAnterior === 'cancelado' &&
+        $accion === 'finalizar'
+    ) {
+        $pdo->rollBack();
+
+        redirect(
+            '/proyecto_cava_Noble/admin/pedidos.php' .
+            '?vista=cancelados&error=1'
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Obtener los productos del pedido
     |--------------------------------------------------------------------------
     */
 
@@ -102,11 +194,12 @@ try {
             cantidad
         FROM pedido_items
         WHERE pedido_id = :pedido_id
+        ORDER BY id ASC
     ";
 
     $stmtItems = $pdo->prepare($sqlItems);
 
-    $stmtItems->bindParam(
+    $stmtItems->bindValue(
         ':pedido_id',
         $pedidoId,
         PDO::PARAM_INT
@@ -118,11 +211,11 @@ try {
 
     /*
     |--------------------------------------------------------------------------
-    | Cancelar pedido: restaurar stock
+    | Cancelación: restaurar stock
     |--------------------------------------------------------------------------
     |
-    | El checkout ya descontó el stock al confirmar la compra.
-    | Si el pedido se cancela por primera vez, las unidades regresan al catálogo.
+    | El checkout descuenta el stock cuando crea el pedido.
+    | Si el pedido se cancela por primera vez, se reintegran las unidades.
     |
     */
 
@@ -130,31 +223,29 @@ try {
         $nuevoEstado === 'cancelado' &&
         $estadoAnterior !== 'cancelado'
     ) {
+        $sqlRestaurarStock = "
+            UPDATE productos
+            SET stock = stock + :cantidad
+            WHERE id = :producto_id
+        ";
+
+        $stmtRestaurarStock = $pdo->prepare($sqlRestaurarStock);
+
         foreach ($items as $item) {
-            $productoId = (int)$item['producto_id'];
-            $cantidad = (int)$item['cantidad'];
+            $productoId = (int)($item['producto_id'] ?? 0);
+            $cantidad = (int)($item['cantidad'] ?? 0);
 
             if ($productoId <= 0 || $cantidad <= 0) {
                 continue;
             }
 
-            $sqlRestaurarStock = "
-                UPDATE productos
-                SET stock = stock + :cantidad
-                WHERE id = :producto_id
-            ";
-
-            $stmtRestaurarStock = $pdo->prepare(
-                $sqlRestaurarStock
-            );
-
-            $stmtRestaurarStock->bindParam(
+            $stmtRestaurarStock->bindValue(
                 ':cantidad',
                 $cantidad,
                 PDO::PARAM_INT
             );
 
-            $stmtRestaurarStock->bindParam(
+            $stmtRestaurarStock->bindValue(
                 ':producto_id',
                 $productoId,
                 PDO::PARAM_INT
@@ -166,8 +257,12 @@ try {
 
     /*
     |--------------------------------------------------------------------------
-    | Reactivar pedido cancelado: volver a descontar stock
+    | Reactivación: comprobar y volver a descontar stock
     |--------------------------------------------------------------------------
+    |
+    | Si un pedido cancelado vuelve a un estado activo, primero comprobamos
+    | que todas las unidades continúen disponibles.
+    |
     */
 
     if (
@@ -175,15 +270,17 @@ try {
         $nuevoEstado !== 'cancelado'
     ) {
         foreach ($items as $item) {
-            $productoId = (int)$item['producto_id'];
-            $cantidad = (int)$item['cantidad'];
+            $productoId = (int)($item['producto_id'] ?? 0);
+            $cantidad = (int)($item['cantidad'] ?? 0);
 
             if ($productoId <= 0 || $cantidad <= 0) {
                 continue;
             }
 
             $sqlProducto = "
-                SELECT stock
+                SELECT
+                    id,
+                    stock
                 FROM productos
                 WHERE id = :producto_id
                 LIMIT 1
@@ -192,7 +289,7 @@ try {
 
             $stmtProducto = $pdo->prepare($sqlProducto);
 
-            $stmtProducto->bindParam(
+            $stmtProducto->bindValue(
                 ':producto_id',
                 $productoId,
                 PDO::PARAM_INT
@@ -209,39 +306,37 @@ try {
                 $pdo->rollBack();
 
                 redirect(
-                    '/proyecto_cava_Noble/admin/detalle-pedido.php?id=' .
-                    $pedidoId .
+                    '/proyecto_cava_Noble/admin/detalle-pedido.php' .
+                    '?id=' . $pedidoId .
                     '&stock_error=1'
                 );
             }
         }
 
+        $sqlDescontarStock = "
+            UPDATE productos
+            SET stock = stock - :cantidad
+            WHERE id = :producto_id
+            AND stock >= :cantidad
+        ";
+
+        $stmtDescontarStock = $pdo->prepare($sqlDescontarStock);
+
         foreach ($items as $item) {
-            $productoId = (int)$item['producto_id'];
-            $cantidad = (int)$item['cantidad'];
+            $productoId = (int)($item['producto_id'] ?? 0);
+            $cantidad = (int)($item['cantidad'] ?? 0);
 
             if ($productoId <= 0 || $cantidad <= 0) {
                 continue;
             }
 
-            $sqlDescontarStock = "
-                UPDATE productos
-                SET stock = stock - :cantidad
-                WHERE id = :producto_id
-                AND stock >= :cantidad
-            ";
-
-            $stmtDescontarStock = $pdo->prepare(
-                $sqlDescontarStock
-            );
-
-            $stmtDescontarStock->bindParam(
+            $stmtDescontarStock->bindValue(
                 ':cantidad',
                 $cantidad,
                 PDO::PARAM_INT
             );
 
-            $stmtDescontarStock->bindParam(
+            $stmtDescontarStock->bindValue(
                 ':producto_id',
                 $productoId,
                 PDO::PARAM_INT
@@ -250,12 +345,9 @@ try {
             $stmtDescontarStock->execute();
 
             if ($stmtDescontarStock->rowCount() !== 1) {
-                $pdo->rollBack();
-
-                redirect(
-                    '/proyecto_cava_Noble/admin/detalle-pedido.php?id=' .
-                    $pedidoId .
-                    '&stock_error=1'
+                throw new RuntimeException(
+                    'No se pudo descontar nuevamente el stock del producto #' .
+                    $productoId
                 );
             }
         }
@@ -263,7 +355,7 @@ try {
 
     /*
     |--------------------------------------------------------------------------
-    | Actualizar estado
+    | Actualizar el estado
     |--------------------------------------------------------------------------
     */
 
@@ -275,12 +367,13 @@ try {
 
     $stmtActualizar = $pdo->prepare($sqlActualizar);
 
-    $stmtActualizar->bindParam(
+    $stmtActualizar->bindValue(
         ':estado',
-        $nuevoEstado
+        $nuevoEstado,
+        PDO::PARAM_STR
     );
 
-    $stmtActualizar->bindParam(
+    $stmtActualizar->bindValue(
         ':id',
         $pedidoId,
         PDO::PARAM_INT
@@ -288,29 +381,71 @@ try {
 
     $stmtActualizar->execute();
 
+    if ($stmtActualizar->rowCount() !== 1) {
+        throw new RuntimeException(
+            'No se pudo actualizar el estado del pedido.'
+        );
+    }
+
     /*
     |--------------------------------------------------------------------------
-    | Auditoría
+    | Auditoría administrativa
     |--------------------------------------------------------------------------
     */
 
+    if ($accion === 'finalizar') {
+        $accionLog = 'FINALIZAR_PEDIDO';
+
+        $descripcionLog =
+            'Pedido #' . $pedidoId .
+            ' del cliente "' . $nombreCliente .
+            '" finalizado. Estado modificado de "' .
+            $estadoAnterior .
+            '" a "entregado".';
+    } else {
+        $accionLog = 'CAMBIAR_ESTADO';
+
+        $descripcionLog =
+            'Estado del pedido #' . $pedidoId .
+            ' modificado de "' .
+            $estadoAnterior .
+            '" a "' .
+            $nuevoEstado .
+            '".';
+    }
+
     createAdminLog(
         (int)$_SESSION['usuario_id'],
-        'CAMBIAR_ESTADO',
+        $accionLog,
         'PEDIDO',
         $pedidoId,
-        'Estado del pedido modificado de "' .
-        $estadoAnterior .
-        '" a "' .
-        $nuevoEstado .
-        '"'
+        $descripcionLog
     );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Confirmar transacción
+    |--------------------------------------------------------------------------
+    */
 
     $pdo->commit();
 
+    /*
+    |--------------------------------------------------------------------------
+    | Redirección según la acción
+    |--------------------------------------------------------------------------
+    */
+
+    if ($accion === 'finalizar') {
+        redirect(
+            '/proyecto_cava_Noble/admin/pedidos.php' .
+            '?vista=finalizados&finalizado=1'
+        );
+    }
+
     redirect(
-        '/proyecto_cava_Noble/admin/detalle-pedido.php?id=' .
-        $pedidoId .
+        '/proyecto_cava_Noble/admin/detalle-pedido.php' .
+        '?id=' . $pedidoId .
         '&actualizado=1'
     );
 
@@ -320,15 +455,22 @@ try {
     }
 
     error_log(
-        'Error al actualizar pedido #' .
+        '[Cava Noble] Error al actualizar pedido #' .
         $pedidoId .
         ': ' .
         $exception->getMessage()
     );
 
+    if ($accion === 'finalizar') {
+        redirect(
+            '/proyecto_cava_Noble/admin/pedidos.php' .
+            '?vista=activos&error=1'
+        );
+    }
+
     redirect(
-        '/proyecto_cava_Noble/admin/detalle-pedido.php?id=' .
-        $pedidoId .
+        '/proyecto_cava_Noble/admin/detalle-pedido.php' .
+        '?id=' . $pedidoId .
         '&error=1'
     );
 }

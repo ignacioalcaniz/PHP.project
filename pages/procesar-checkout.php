@@ -36,11 +36,8 @@ if (
 
 /*
 |--------------------------------------------------------------------------
-| Token único del checkout
+| Token único de checkout
 |--------------------------------------------------------------------------
-|
-| Evita que el mismo formulario pueda enviarse dos veces accidentalmente.
-|
 */
 
 $checkoutTokenPost = $_POST['checkout_token'] ?? '';
@@ -58,7 +55,7 @@ if (
 
 /*
 |--------------------------------------------------------------------------
-| Verificación Cloudflare Turnstile
+| Cloudflare Turnstile
 |--------------------------------------------------------------------------
 */
 
@@ -83,24 +80,50 @@ $pdo = conectarDB();
 
 /*
 |--------------------------------------------------------------------------
-| Datos del comprador
+| Datos recibidos
 |--------------------------------------------------------------------------
 */
 
 $usuarioId = (int)($_SESSION['usuario_id'] ?? 0);
 
-$nombreCliente = trim((string)($_POST['nombre_cliente'] ?? ''));
+$nombreCliente = trim(
+    (string)($_POST['nombre_cliente'] ?? '')
+);
+
 $emailCliente = strtolower(
     trim((string)($_POST['email_cliente'] ?? ''))
 );
-$telefono = trim((string)($_POST['telefono'] ?? ''));
-$direccion = trim((string)($_POST['direccion'] ?? ''));
-$metodoPago = trim((string)($_POST['metodo_pago'] ?? ''));
+
+$telefono = trim(
+    (string)($_POST['telefono'] ?? '')
+);
+
+$direccion = trim(
+    (string)($_POST['direccion'] ?? '')
+);
+
+$ciudad = trim(
+    (string)($_POST['ciudad'] ?? '')
+);
+
+$provincia = trim(
+    (string)($_POST['provincia'] ?? '')
+);
+
+$metodoPago = trim(
+    (string)($_POST['metodo_pago'] ?? '')
+);
 
 $metodosPagoPermitidos = [
     'transferencia',
     'efectivo'
 ];
+
+/*
+|--------------------------------------------------------------------------
+| Validación
+|--------------------------------------------------------------------------
+*/
 
 if (
     $usuarioId <= 0 ||
@@ -108,6 +131,8 @@ if (
     $emailCliente === '' ||
     $telefono === '' ||
     $direccion === '' ||
+    $ciudad === '' ||
+    $provincia === '' ||
     $metodoPago === '' ||
     !filter_var($emailCliente, FILTER_VALIDATE_EMAIL) ||
     !in_array($metodoPago, $metodosPagoPermitidos, true)
@@ -117,15 +142,18 @@ if (
 
 /*
 |--------------------------------------------------------------------------
-| Límites básicos de longitud
+| Límites de longitud compatibles con MySQL
 |--------------------------------------------------------------------------
 */
 
 if (
-    mb_strlen($nombreCliente) > 150 ||
-    mb_strlen($emailCliente) > 190 ||
+    mb_strlen($nombreCliente) > 100 ||
+    mb_strlen($emailCliente) > 150 ||
     mb_strlen($telefono) > 50 ||
-    mb_strlen($direccion) > 500
+    mb_strlen($direccion) > 200 ||
+    mb_strlen($ciudad) > 100 ||
+    mb_strlen($provincia) > 100 ||
+    mb_strlen($metodoPago) > 50
 ) {
     redirect('/proyecto_cava_Noble/pages/checkout.php?error=1');
 }
@@ -133,7 +161,7 @@ if (
 try {
     /*
     |--------------------------------------------------------------------------
-    | Inicio de transacción
+    | Iniciar transacción
     |--------------------------------------------------------------------------
     */
 
@@ -144,9 +172,23 @@ try {
 
     /*
     |--------------------------------------------------------------------------
-    | Validación y bloqueo de productos
+    | Validar productos y bloquear stock
     |--------------------------------------------------------------------------
     */
+
+    $sqlProducto = "
+        SELECT
+            id,
+            nombre,
+            precio,
+            stock
+        FROM productos
+        WHERE id = :id
+        LIMIT 1
+        FOR UPDATE
+    ";
+
+    $stmtProducto = $pdo->prepare($sqlProducto);
 
     foreach ($_SESSION['carrito'] as $productoId => $itemCarrito) {
         $productoId = (int)$productoId;
@@ -155,20 +197,6 @@ try {
         if ($productoId <= 0 || $cantidad <= 0) {
             continue;
         }
-
-        $sqlProducto = "
-            SELECT
-                id,
-                nombre,
-                precio,
-                stock
-            FROM productos
-            WHERE id = :id
-            LIMIT 1
-            FOR UPDATE
-        ";
-
-        $stmtProducto = $pdo->prepare($sqlProducto);
 
         $stmtProducto->bindValue(
             ':id',
@@ -181,23 +209,18 @@ try {
         $producto = $stmtProducto->fetch();
 
         if (!$producto) {
-            $pdo->rollBack();
-
-            redirect(
-                '/proyecto_cava_Noble/pages/checkout.php?stock=1'
+            throw new RuntimeException(
+                'El producto #' . $productoId . ' no existe.'
             );
         }
 
         $stockDisponible = (int)$producto['stock'];
 
-        if (
-            $stockDisponible <= 0 ||
-            $stockDisponible < $cantidad
-        ) {
-            $pdo->rollBack();
-
-            redirect(
-                '/proyecto_cava_Noble/pages/checkout.php?stock=1'
+        if ($stockDisponible < $cantidad) {
+            throw new RuntimeException(
+                'Stock insuficiente para el producto "' .
+                $producto['nombre'] .
+                '".'
             );
         }
 
@@ -219,29 +242,23 @@ try {
         $itemsFinales[] = [
             'producto_id' => (int)$producto['id'],
             'nombre_producto' => (string)$producto['nombre'],
-            'precio' => $precioUnitario,
+            'precio_unitario' => $precioUnitario,
             'cantidad' => $cantidad,
             'subtotal' => $subtotal
         ];
     }
 
     if (empty($itemsFinales) || $totalGeneral <= 0) {
-        $pdo->rollBack();
-
-        redirect('/proyecto_cava_Noble/carrito.php');
+        throw new RuntimeException(
+            'El carrito no contiene productos válidos.'
+        );
     }
 
     /*
     |--------------------------------------------------------------------------
     | Crear pedido
     |--------------------------------------------------------------------------
-    |
-    | Se inicia como "procesando", cumpliendo la consigna académica y
-    | manteniendo un flujo profesional de estados.
-    |
     */
-
-    $estadoInicial = 'procesando';
 
     $sqlPedido = "
         INSERT INTO pedidos (
@@ -250,6 +267,8 @@ try {
             email_cliente,
             telefono,
             direccion,
+            ciudad,
+            provincia,
             metodo_pago,
             estado,
             total
@@ -260,6 +279,8 @@ try {
             :email_cliente,
             :telefono,
             :direccion,
+            :ciudad,
+            :provincia,
             :metodo_pago,
             :estado,
             :total
@@ -268,66 +289,30 @@ try {
 
     $stmtPedido = $pdo->prepare($sqlPedido);
 
-    $stmtPedido->bindValue(
-        ':usuario_id',
-        $usuarioId,
-        PDO::PARAM_INT
-    );
-
-    $stmtPedido->bindValue(
-        ':nombre_cliente',
-        $nombreCliente,
-        PDO::PARAM_STR
-    );
-
-    $stmtPedido->bindValue(
-        ':email_cliente',
-        $emailCliente,
-        PDO::PARAM_STR
-    );
-
-    $stmtPedido->bindValue(
-        ':telefono',
-        $telefono,
-        PDO::PARAM_STR
-    );
-
-    $stmtPedido->bindValue(
-        ':direccion',
-        $direccion,
-        PDO::PARAM_STR
-    );
-
-    $stmtPedido->bindValue(
-        ':metodo_pago',
-        $metodoPago,
-        PDO::PARAM_STR
-    );
-
-    $stmtPedido->bindValue(
-        ':estado',
-        $estadoInicial,
-        PDO::PARAM_STR
-    );
-
-    $stmtPedido->bindValue(
-        ':total',
-        $totalGeneral
-    );
-
-    $stmtPedido->execute();
+    $stmtPedido->execute([
+        ':usuario_id' => $usuarioId,
+        ':nombre_cliente' => $nombreCliente,
+        ':email_cliente' => $emailCliente,
+        ':telefono' => $telefono,
+        ':direccion' => $direccion,
+        ':ciudad' => $ciudad,
+        ':provincia' => $provincia,
+        ':metodo_pago' => $metodoPago,
+        ':estado' => 'procesando',
+        ':total' => $totalGeneral
+    ]);
 
     $pedidoId = (int)$pdo->lastInsertId();
 
     if ($pedidoId <= 0) {
         throw new RuntimeException(
-            'No se pudo obtener el ID del pedido.'
+            'No se pudo generar el identificador del pedido.'
         );
     }
 
     /*
     |--------------------------------------------------------------------------
-    | Preparar consultas reutilizables
+    | Preparar inserción de ítems
     |--------------------------------------------------------------------------
     */
 
@@ -336,7 +321,7 @@ try {
             pedido_id,
             producto_id,
             nombre_producto,
-            precio,
+            precio_unitario,
             cantidad,
             subtotal
         )
@@ -344,7 +329,7 @@ try {
             :pedido_id,
             :producto_id,
             :nombre_producto,
-            :precio,
+            :precio_unitario,
             :cantidad,
             :subtotal
         )
@@ -352,11 +337,21 @@ try {
 
     $stmtItem = $pdo->prepare($sqlItem);
 
+    /*
+    |--------------------------------------------------------------------------
+    | Preparar actualización segura de stock
+    |--------------------------------------------------------------------------
+    |
+    | Se usan dos placeholders diferentes porque PDO con consultas
+    | preparadas nativas no debe reutilizar el mismo placeholder nominal.
+    |
+    */
+
     $sqlStock = "
         UPDATE productos
-        SET stock = stock - :cantidad
+        SET stock = stock - :cantidad_restar
         WHERE id = :producto_id
-        AND stock >= :cantidad
+        AND stock >= :cantidad_validar
     ";
 
     $stmtStock = $pdo->prepare($sqlStock);
@@ -368,49 +363,17 @@ try {
     */
 
     foreach ($itemsFinales as $item) {
-        $stmtItem->bindValue(
-            ':pedido_id',
-            $pedidoId,
-            PDO::PARAM_INT
-        );
-
-        $stmtItem->bindValue(
-            ':producto_id',
-            $item['producto_id'],
-            PDO::PARAM_INT
-        );
-
-        $stmtItem->bindValue(
-            ':nombre_producto',
-            $item['nombre_producto'],
-            PDO::PARAM_STR
-        );
-
-        $stmtItem->bindValue(
-            ':precio',
-            $item['precio']
-        );
-
-        $stmtItem->bindValue(
-            ':cantidad',
-            $item['cantidad'],
-            PDO::PARAM_INT
-        );
-
-        $stmtItem->bindValue(
-            ':subtotal',
-            $item['subtotal']
-        );
-
-        $stmtItem->execute();
-
-        /*
-        | Descontamos stock solo si continúa siendo suficiente.
-        | Aunque la fila ya está bloqueada, esta condición agrega defensa extra.
-        */
+        $stmtItem->execute([
+            ':pedido_id' => $pedidoId,
+            ':producto_id' => $item['producto_id'],
+            ':nombre_producto' => $item['nombre_producto'],
+            ':precio_unitario' => $item['precio_unitario'],
+            ':cantidad' => $item['cantidad'],
+            ':subtotal' => $item['subtotal']
+        ]);
 
         $stmtStock->bindValue(
-            ':cantidad',
+            ':cantidad_restar',
             $item['cantidad'],
             PDO::PARAM_INT
         );
@@ -418,6 +381,12 @@ try {
         $stmtStock->bindValue(
             ':producto_id',
             $item['producto_id'],
+            PDO::PARAM_INT
+        );
+
+        $stmtStock->bindValue(
+            ':cantidad_validar',
+            $item['cantidad'],
             PDO::PARAM_INT
         );
 
@@ -425,8 +394,9 @@ try {
 
         if ($stmtStock->rowCount() !== 1) {
             throw new RuntimeException(
-                'No se pudo actualizar el stock del producto #' .
-                $item['producto_id']
+                'No se pudo descontar el stock del producto #' .
+                $item['producto_id'] .
+                '.'
             );
         }
     }
@@ -441,21 +411,18 @@ try {
 
     /*
     |--------------------------------------------------------------------------
-    | Limpiar carrito y tokens
+    | Limpiar sesión después del commit
     |--------------------------------------------------------------------------
-    |
-    | Se hace solamente después del commit. Si ocurre un error, el usuario
-    | conserva el carrito para poder volver a intentar.
-    |
     */
 
     unset($_SESSION['carrito']);
     unset($_SESSION['checkout_token']);
     unset($_SESSION['csrf_token']);
+    unset($_SESSION['checkout_debug_error']);
 
     /*
     |--------------------------------------------------------------------------
-    | Pedido disponible para gracias.php
+    | Guardar último pedido para gracias.php
     |--------------------------------------------------------------------------
     */
 
@@ -469,13 +436,19 @@ try {
     }
 
     error_log(
-        '[Cava Noble] Error en checkout del usuario #' .
+        '[Cava Noble] Error checkout usuario #' .
         $usuarioId .
         ': ' .
         $exception->getMessage()
     );
 
-    redirect(
-        '/proyecto_cava_Noble/pages/checkout.php?error=1'
-    );
+    if (
+        defined('APP_DEBUG') &&
+        APP_DEBUG === true
+    ) {
+        $_SESSION['checkout_debug_error'] =
+            $exception->getMessage();
+    }
+
+    redirect('/proyecto_cava_Noble/pages/checkout.php?error=1');
 }

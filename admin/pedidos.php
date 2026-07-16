@@ -7,6 +7,7 @@ require_once '../config/database.php';
 requireAdmin();
 
 $pdo = conectarDB();
+$csrfToken = generateCsrfToken();
 
 /*
 |--------------------------------------------------------------------------
@@ -14,8 +15,8 @@ $pdo = conectarDB();
 |--------------------------------------------------------------------------
 */
 
-$vista = trim($_GET['vista'] ?? 'activos');
-$estado = trim($_GET['estado'] ?? '');
+$vista = trim((string)($_GET['vista'] ?? 'activos'));
+$estado = trim((string)($_GET['estado'] ?? ''));
 
 $vistasPermitidas = [
     'todos',
@@ -95,6 +96,7 @@ $sqlKpis = "
             ),
             0
         ) AS facturacion_total
+
     FROM pedidos
 ";
 
@@ -167,12 +169,32 @@ if ($estado !== '') {
     $params[':estado'] = $estado;
 }
 
-$sql .= " ORDER BY p.fecha_pedido DESC, p.id DESC";
+$sql .= "
+    ORDER BY
+        p.fecha_pedido DESC,
+        p.id DESC
+";
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 
 $pedidos = $stmt->fetchAll();
+
+/*
+|--------------------------------------------------------------------------
+| Etiquetas visuales de estados
+|--------------------------------------------------------------------------
+*/
+
+$estadoLabels = [
+    'pendiente' => 'Pendiente',
+    'procesando' => 'Procesando',
+    'confirmado' => 'Confirmado',
+    'preparado' => 'Preparado',
+    'despachado' => 'Despachado',
+    'entregado' => 'Entregado',
+    'cancelado' => 'Cancelado'
+];
 
 include '../includes/header.php';
 ?>
@@ -193,7 +215,17 @@ include '../includes/header.php';
             </p>
         </div>
 
-        <!-- BOTONERA SOLICITADA POR LA CONSIGNA -->
+        <!--
+        |--------------------------------------------------------------------------
+        | Botonera principal
+        |--------------------------------------------------------------------------
+        |
+        | Correspondencia con la consigna:
+        | - Realizar pedido
+        | - Ver pedidos
+        | - Finalizar pedidos
+        |
+        -->
 
         <div class="admin-toolbar">
 
@@ -244,7 +276,7 @@ include '../includes/header.php';
                 </strong>
 
                 <small>
-                    Pendientes de finalización
+                    Pedidos pendientes de entrega
                 </small>
             </article>
 
@@ -256,7 +288,19 @@ include '../includes/header.php';
                 </strong>
 
                 <small>
-                    Pedidos entregados
+                    Pedidos entregados correctamente
+                </small>
+            </article>
+
+            <article class="admin-kpi-card">
+                <span>Cancelados</span>
+
+                <strong>
+                    <?php echo (int)($kpis['pedidos_cancelados'] ?? 0); ?>
+                </strong>
+
+                <small>
+                    Pedidos cancelados
                 </small>
             </article>
 
@@ -275,7 +319,7 @@ include '../includes/header.php';
                 </strong>
 
                 <small>
-                    Pedidos no cancelados
+                    Total de pedidos no cancelados
                 </small>
             </article>
 
@@ -288,8 +332,22 @@ include '../includes/header.php';
         <?php if (isset($_GET['actualizado'])): ?>
             <div class="admin-empty-state">
                 <h3>Estado actualizado</h3>
+
                 <p>
-                    El estado del pedido se modificó correctamente.
+                    El estado del pedido fue modificado correctamente.
+                </p>
+            </div>
+
+            <br>
+        <?php endif; ?>
+
+        <?php if (isset($_GET['finalizado'])): ?>
+            <div class="admin-empty-state">
+                <h3>Pedido finalizado</h3>
+
+                <p>
+                    El pedido fue marcado como entregado y ahora figura
+                    en la sección de pedidos finalizados.
                 </p>
             </div>
 
@@ -301,6 +359,16 @@ include '../includes/header.php';
                 No se pudo reactivar el pedido porque uno o más productos
                 no tienen stock suficiente.
             </div>
+
+            <br>
+        <?php endif; ?>
+
+        <?php if (isset($_GET['error'])): ?>
+            <div class="delete-warning">
+                No se pudo completar la operación solicitada.
+            </div>
+
+            <br>
         <?php endif; ?>
 
         <!-- FILTROS -->
@@ -312,7 +380,8 @@ include '../includes/header.php';
                     <h2>Filtrar pedidos</h2>
 
                     <p>
-                        Buscá pedidos por vista operativa o por un estado específico.
+                        Consultá pedidos por vista operativa
+                        o por un estado específico.
                     </p>
                 </div>
             </div>
@@ -323,9 +392,14 @@ include '../includes/header.php';
                 class="auth-form"
             >
                 <div class="form-group">
-                    <label for="vista">Vista</label>
+                    <label for="vista">
+                        Vista
+                    </label>
 
-                    <select id="vista" name="vista">
+                    <select
+                        id="vista"
+                        name="vista"
+                    >
                         <option
                             value="todos"
                             <?php echo $vista === 'todos' ? 'selected' : ''; ?>
@@ -357,65 +431,31 @@ include '../includes/header.php';
                 </div>
 
                 <div class="form-group">
-                    <label for="estado">Estado específico</label>
+                    <label for="estado">
+                        Estado específico
+                    </label>
 
-                    <select id="estado" name="estado">
+                    <select
+                        id="estado"
+                        name="estado"
+                    >
                         <option value="">
                             Todos los estados
                         </option>
 
-                        <option
-                            value="pendiente"
-                            <?php echo $estado === 'pendiente' ? 'selected' : ''; ?>
-                        >
-                            Pendiente
-                        </option>
-
-                        <option
-                            value="procesando"
-                            <?php echo $estado === 'procesando' ? 'selected' : ''; ?>
-                        >
-                            Procesando
-                        </option>
-
-                        <option
-                            value="confirmado"
-                            <?php echo $estado === 'confirmado' ? 'selected' : ''; ?>
-                        >
-                            Confirmado
-                        </option>
-
-                        <option
-                            value="preparado"
-                            <?php echo $estado === 'preparado' ? 'selected' : ''; ?>
-                        >
-                            Preparado
-                        </option>
-
-                        <option
-                            value="despachado"
-                            <?php echo $estado === 'despachado' ? 'selected' : ''; ?>
-                        >
-                            Despachado
-                        </option>
-
-                        <option
-                            value="entregado"
-                            <?php echo $estado === 'entregado' ? 'selected' : ''; ?>
-                        >
-                            Entregado
-                        </option>
-
-                        <option
-                            value="cancelado"
-                            <?php echo $estado === 'cancelado' ? 'selected' : ''; ?>
-                        >
-                            Cancelado
-                        </option>
+                        <?php foreach ($estadoLabels as $valorEstado => $etiquetaEstado): ?>
+                            <option
+                                value="<?php echo e($valorEstado); ?>"
+                                <?php echo $estado === $valorEstado ? 'selected' : ''; ?>
+                            >
+                                <?php echo e($etiquetaEstado); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
 
                 <div class="admin-toolbar">
+
                     <button
                         type="submit"
                         class="btn btn-primary"
@@ -429,6 +469,7 @@ include '../includes/header.php';
                     >
                         Limpiar filtros
                     </a>
+
                 </div>
             </form>
 
@@ -441,17 +482,20 @@ include '../includes/header.php';
         <section class="admin-report-panel">
 
             <div class="admin-panel-header">
+
                 <div>
                     <h2>Pedidos registrados</h2>
 
                     <p>
-                        Resultado de la vista y los filtros seleccionados.
+                        Resultado correspondiente a la vista
+                        y los filtros seleccionados.
                     </p>
                 </div>
 
                 <span class="admin-badge">
                     <?php echo count($pedidos); ?> resultados
                 </span>
+
             </div>
 
             <?php if (empty($pedidos)): ?>
@@ -460,7 +504,8 @@ include '../includes/header.php';
                     <h3>No hay pedidos para mostrar</h3>
 
                     <p>
-                        No existen pedidos que coincidan con los filtros seleccionados.
+                        No existen pedidos que coincidan
+                        con los filtros seleccionados.
                     </p>
                 </div>
 
@@ -470,36 +515,62 @@ include '../includes/header.php';
 
                     <?php foreach ($pedidos as $pedido): ?>
 
+                        <?php
+                        $pedidoId = (int)$pedido['id'];
+                        $estadoPedido = (string)$pedido['estado'];
+
+                        $pedidoPuedeFinalizar = !in_array(
+                            $estadoPedido,
+                            ['entregado', 'cancelado'],
+                            true
+                        );
+
+                        $etiquetaEstado =
+                            $estadoLabels[$estadoPedido]
+                            ?? ucfirst($estadoPedido);
+                        ?>
+
                         <article class="admin-list-row">
 
                             <div>
-                                <span class="admin-badge">
-                                    <?php echo e(ucfirst($pedido['estado'])); ?>
+                                <span
+                                    class="
+                                        admin-badge
+                                        order-status
+                                        order-status-<?php echo e($estadoPedido); ?>
+                                    "
+                                >
+                                    <?php echo e($etiquetaEstado); ?>
                                 </span>
 
                                 <h3>
-                                    Pedido #<?php echo (int)$pedido['id']; ?>
+                                    Pedido #<?php echo $pedidoId; ?>
                                 </h3>
 
                                 <p>
                                     <strong>Cliente:</strong>
+
                                     <?php echo e($pedido['nombre_cliente']); ?>
                                 </p>
 
                                 <p>
                                     <strong>Email:</strong>
+
                                     <?php echo e($pedido['email_cliente']); ?>
                                 </p>
 
                                 <p>
                                     <strong>Fecha:</strong>
+
                                     <?php echo e($pedido['fecha_pedido']); ?>
                                 </p>
 
                                 <p>
                                     <strong>Productos:</strong>
+
                                     <?php echo (int)$pedido['total_items']; ?>
                                     tipos ·
+
                                     <?php echo (int)$pedido['total_unidades']; ?>
                                     unidades
                                 </p>
@@ -519,11 +590,52 @@ include '../includes/header.php';
                                 </strong>
 
                                 <a
-                                    href="/proyecto_cava_Noble/admin/detalle-pedido.php?id=<?php echo (int)$pedido['id']; ?>"
+                                    href="/proyecto_cava_Noble/admin/detalle-pedido.php?id=<?php echo $pedidoId; ?>"
                                     class="admin-action-btn admin-action-edit"
                                 >
                                     Ver detalle
                                 </a>
+
+                                <?php if ($pedidoPuedeFinalizar): ?>
+
+                                    <form
+                                        action="/proyecto_cava_Noble/admin/actualizar-estado-pedido.php"
+                                        method="POST"
+                                        class="admin-quick-action-form"
+                                    >
+                                        <input
+                                            type="hidden"
+                                            name="csrf_token"
+                                            value="<?php echo e($csrfToken); ?>"
+                                        >
+
+                                        <input
+                                            type="hidden"
+                                            name="pedido_id"
+                                            value="<?php echo $pedidoId; ?>"
+                                        >
+
+                                        <input
+                                            type="hidden"
+                                            name="estado"
+                                            value="entregado"
+                                        >
+
+                                        <input
+                                            type="hidden"
+                                            name="accion"
+                                            value="finalizar"
+                                        >
+
+                                        <button
+                                            type="submit"
+                                            class="admin-action-btn admin-action-complete"
+                                        >
+                                            Finalizar pedido
+                                        </button>
+                                    </form>
+
+                                <?php endif; ?>
 
                             </div>
 
