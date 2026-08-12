@@ -37,12 +37,20 @@ function conectarDB(): PDO
             $username,
             $password,
             [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES => false,
-                PDO::ATTR_STRINGIFY_FETCHES => false,
+                PDO::ATTR_ERRMODE =>
+                    PDO::ERRMODE_EXCEPTION,
+
+                PDO::ATTR_DEFAULT_FETCH_MODE =>
+                    PDO::FETCH_ASSOC,
+
+                PDO::ATTR_EMULATE_PREPARES =>
+                    false,
+
+                PDO::ATTR_STRINGIFY_FETCHES =>
+                    false,
+
                 PDO::MYSQL_ATTR_INIT_COMMAND =>
-                    "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
+                    'SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci',
             ]
         );
 
@@ -53,16 +61,19 @@ function conectarDB(): PDO
             $exception->getMessage()
         );
 
-        if (APP_DEBUG) {
+        if (defined('APP_DEBUG') && APP_DEBUG) {
             throw new RuntimeException(
-                'Error de conexión: ' . $exception->getMessage(),
+                'Error de conexión: ' .
+                $exception->getMessage(),
                 0,
                 $exception
             );
         }
 
         throw new RuntimeException(
-            'No se pudo conectar con la base de datos.'
+            'No se pudo conectar con la base de datos.',
+            0,
+            $exception
         );
     }
 }
