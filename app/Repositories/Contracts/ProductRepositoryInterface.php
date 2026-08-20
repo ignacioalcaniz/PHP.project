@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Repositories\Contracts;
 
+use App\DTOs\CreateProductDTO;
 use App\DTOs\ProductFiltersDTO;
+use App\DTOs\UpdateProductDTO;
 use App\Models\Product;
 
 interface ProductRepositoryInterface
@@ -41,4 +43,36 @@ interface ProductRepositoryInterface
      * @return array<int, array{id:int, nombre:string}>
      */
     public function findWineries(): array;
+
+    /**
+     * @return array{
+     *     id:int,
+     *     nombre:string,
+     *     pais:string,
+     *     region:string
+     * }|null
+     */
+    public function findWineryById(
+        int $id
+    ): ?array;
+
+    public function create(
+        CreateProductDTO $data,
+        string $imagePath,
+        array $winery
+    ): int;
+
+    public function update(
+        UpdateProductDTO $data,
+        string $imagePath,
+        array $winery
+    ): void;
+
+    public function hasOrderItems(
+        int $productId
+    ): bool;
+
+    public function delete(
+        int $productId
+    ): void;
 }

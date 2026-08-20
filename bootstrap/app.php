@@ -3,9 +3,11 @@
 declare(strict_types=1);
 
 use App\Controllers\ProductController;
-use App\Repositories\Contracts\ProductRepositoryInterface;
 use App\Repositories\MySQL\MySqlProductRepository;
+use App\Services\AuditService;
+use App\Services\ProductImageService;
 use App\Services\ProductService;
+use App\Validators\ProductValidator;
 
 /*
 |--------------------------------------------------------------------------
@@ -66,23 +68,56 @@ $pdo = conectarDB();
 
 /*
 |--------------------------------------------------------------------------
+| Servicios compartidos
+|--------------------------------------------------------------------------
+*/
+
+$auditService = new AuditService(
+    $pdo
+);
+
+$productImageService = new ProductImageService(
+    projectRoot: dirname(__DIR__),
+    baseUrl: APP_URL
+);
+
+/*
+|--------------------------------------------------------------------------
 | Módulo Productos
 |--------------------------------------------------------------------------
 |
-| Las dependencias se construyen desde afuera:
+| Las dependencias se construyen desde afuera.
 |
-| Controller
-|     → Service
-|         → RepositoryInterface
-|             → MySqlProductRepository
-|                 → PDO
+| ProductController
+|        ↓
+| ProductService
+|        ↓
+| ┌──────────────────────────────────┐
+| │ ProductValidator                 │
+| │ ProductImageService              │
+| │ ProductRepositoryInterface       │
+| │ AuditService                     │
+| └──────────────────────────────────┘
+|        ↓
+| MySqlProductRepository
+|        ↓
+| PDO
+|        ↓
+| MySQL
 |
 */
 
-$productRepository = new MySqlProductRepository($pdo);
+$productRepository = new MySqlProductRepository(
+    $pdo
+);
+
+$productValidator = new ProductValidator();
 
 $productService = new ProductService(
-    $productRepository
+    productRepository: $productRepository,
+    productValidator: $productValidator,
+    productImageService: $productImageService,
+    auditService: $auditService
 );
 
 $productController = new ProductController(
