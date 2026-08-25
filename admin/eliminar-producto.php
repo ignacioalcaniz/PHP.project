@@ -1,108 +1,135 @@
 <?php
-require_once '../includes/auth.php';
-require_once '../includes/security.php';
-require_once '../config/database.php';
+
+declare(strict_types=1);
+
+use App\Models\Product;
+
+require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/security.php';
 
 requireAdmin();
 
-$pdo = conectarDB();
+require_once __DIR__ . '/../bootstrap/app.php';
+
+/*
+|--------------------------------------------------------------------------
+| POST: eliminar producto
+|--------------------------------------------------------------------------
+*/
 
 if (isPostRequest()) {
+    $csrfToken = $_POST['csrf_token'] ?? '';
+
     if (
-        !isset($_POST['csrf_token']) ||
-        !validateCsrfToken($_POST['csrf_token'])
+        !is_string($csrfToken) ||
+        $csrfToken === '' ||
+        !validateCsrfToken($csrfToken)
     ) {
+        http_response_code(403);
+
         die('Token CSRF inválido.');
     }
 
-    $id = (int)($_POST['id'] ?? 0);
+    $adminId = (int)(
+        $_SESSION['usuario_id']
+        ?? 0
+    );
 
-    if ($id <= 0) {
-        redirect('/proyecto_cava_Noble/admin/productos.php');
+    if ($adminId <= 0) {
+        redirect(
+            url('Login/login.php')
+        );
     }
 
-    $sqlCheck = "
-        SELECT COUNT(*) AS total
-        FROM pedido_items
-        WHERE producto_id = :id
-    ";
+    $result = $productController->destroy(
+        $_POST['id'] ?? null,
+        $adminId
+    );
 
-    $stmtCheck = $pdo->prepare($sqlCheck);
-    $stmtCheck->bindParam(':id', $id, PDO::PARAM_INT);
-    $stmtCheck->execute();
+    if ($result['success'] === true) {
+        unset($_SESSION['admin_product_error']);
 
-    $relacionado = $stmtCheck->fetch();
-
-    if ((int)$relacionado['total'] > 0) {
-        include '../includes/header.php';
-        ?>
-
-        <main class="section">
-            <div class="container">
-                <div class="form-container">
-                    <h2>No se puede eliminar</h2>
-                    <p>
-                        Este producto ya tiene pedidos asociados.
-                        Para mantener el historial de ventas, no se permite eliminarlo.
-                    </p>
-
-                    <br>
-
-                    <a href="/proyecto_cava_Noble/admin/productos.php" class="btn btn-primary">
-                        Volver a productos
-                    </a>
-                </div>
-            </div>
-        </main>
-
-        <?php
-        include '../includes/footer.php';
-        exit;
+        redirect(
+            url('admin/productos.php?deleted=1')
+        );
     }
 
-    $sqlDelete = "
-        DELETE FROM productos
-        WHERE id = :id
-    ";
+    $_SESSION['admin_product_error'] =
+        $result['error']
+        ?? 'No se pudo eliminar el producto.';
 
-    $stmtDelete = $pdo->prepare($sqlDelete);
-    $stmtDelete->bindParam(':id', $id, PDO::PARAM_INT);
-    $stmtDelete->execute();
-
-    redirect('/proyecto_cava_Noble/admin/productos.php');
+    redirect(
+        url(
+            'admin/eliminar-producto.php?id=' .
+            (int)($_POST['id'] ?? 0) .
+            '&error=1'
+        )
+    );
 }
 
-$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+/*
+|--------------------------------------------------------------------------
+| GET: mostrar confirmación
+|--------------------------------------------------------------------------
+*/
 
-if ($id <= 0) {
-    redirect('/proyecto_cava_Noble/admin/productos.php');
+$result = $productController->deleteConfirmation(
+    $_GET['id'] ?? null
+);
+
+/** @var Product|null $producto */
+$producto = $result['product'];
+$error = $result['error'];
+
+if (
+    !$producto instanceof Product ||
+    $error !== null
+) {
+    $_SESSION['admin_product_error'] =
+        $error
+        ?? 'No se pudo cargar el producto.';
+
+    redirect(
+        url('admin/productos.php?error=1')
+    );
 }
 
-$sqlProducto = "
-    SELECT
-        p.*,
-        c.nombre AS categoria,
-        b.nombre AS bodega_nombre
-    FROM productos p
-    LEFT JOIN categorias c ON p.categoria_id = c.id
-    LEFT JOIN bodegas b ON p.bodega_id = b.id
-    WHERE p.id = :id
-    LIMIT 1
-";
+/*
+|--------------------------------------------------------------------------
+| Error de intento de eliminación
+|--------------------------------------------------------------------------
+*/
 
-$stmtProducto = $pdo->prepare($sqlProducto);
-$stmtProducto->bindParam(':id', $id, PDO::PARAM_INT);
-$stmtProducto->execute();
+$operationError = null;
 
-$producto = $stmtProducto->fetch();
+if (isset($_GET['error'])) {
+    $sessionError =
+        $_SESSION['admin_product_error']
+        ?? 'No se pudo eliminar el producto.';
 
-if (!$producto) {
-    redirect('/proyecto_cava_Noble/admin/productos.php');
+    $operationError = is_string($sessionError)
+        ? $sessionError
+        : 'No se pudo eliminar el producto.';
+
+    unset($_SESSION['admin_product_error']);
 }
+
+/*
+|--------------------------------------------------------------------------
+| CSRF
+|--------------------------------------------------------------------------
+*/
 
 $csrfToken = generateCsrfToken();
 
-include '../includes/header.php';
+/*
+|--------------------------------------------------------------------------
+| Vista
+|--------------------------------------------------------------------------
+*/
+
+include __DIR__ . '/../includes/header.php';
+
 ?>
 
 <main class="section">
@@ -110,53 +137,152 @@ include '../includes/header.php';
 
         <div class="section-header">
             <h2>Eliminar producto</h2>
-            <p>Confirmá la eliminación del producto seleccionado.</p>
+
+            <p>
+                Confirmá la eliminación del producto seleccionado.
+            </p>
         </div>
 
         <div class="cart-box">
-            <div class="cart-item">
-                <div>
-                    <h3><?php echo e($producto['nombre']); ?></h3>
+
+            <?php if ($operationError !== null): ?>
+
+                <div
+                    role="alert"
+                    style="
+                        margin-bottom: 20px;
+                        padding: 15px;
+                        border-radius: 8px;
+                        background: #f8d7da;
+                        color: #842029;
+                    "
+                >
+                    <strong>
+                        No se puede eliminar el producto.
+                    </strong>
+
                     <p>
-                        <?php echo e($producto['bodega_nombre'] ?? 'Sin bodega'); ?>
-                        ·
-                        <?php echo e($producto['categoria'] ?? 'Sin categoría'); ?>
+                        <?php echo e($operationError); ?>
                     </p>
-                    <p><strong>Precio:</strong> $<?php echo number_format($producto['precio'], 0, ',', '.'); ?></p>
-                    <p><strong>Stock:</strong> <?php echo (int)$producto['stock']; ?></p>
+                </div>
+
+            <?php endif; ?>
+
+            <div class="cart-item">
+
+                <div>
+                    <h3>
+                        <?php echo e(
+                            $producto->name()
+                        ); ?>
+                    </h3>
+
+                    <p>
+                        <?php echo e(
+                            $producto->wineryName()
+                                ?? 'Sin bodega'
+                        ); ?>
+
+                        ·
+
+                        <?php echo e(
+                            $producto->categoryName()
+                                ?? 'Sin categoría'
+                        ); ?>
+                    </p>
+
+                    <p>
+                        <strong>Precio:</strong>
+
+                        $<?php echo number_format(
+                            $producto->price(),
+                            0,
+                            ',',
+                            '.'
+                        ); ?>
+                    </p>
+
+                    <p>
+                        <strong>Stock:</strong>
+
+                        <?php echo $producto->stock(); ?>
+                    </p>
                 </div>
 
                 <img
-                    src="<?php echo e($producto['imagen']); ?>"
-                    alt="<?php echo e($producto['nombre']); ?>"
-                    style="width:100px; height:120px; object-fit:cover;"
+                    src="<?php echo e(
+                        $producto->image()
+                    ); ?>"
+                    alt="<?php echo e(
+                        $producto->name()
+                    ); ?>"
+                    style="
+                        width: 100px;
+                        height: 120px;
+                        object-fit: cover;
+                    "
                 >
+
             </div>
 
             <br>
 
             <p>
                 Esta acción eliminará el producto del catálogo.
-                No se recomienda eliminar productos que ya tengan ventas asociadas.
+            </p>
+
+            <p>
+                Los productos que tengan pedidos asociados
+                no pueden eliminarse para preservar el
+                historial de ventas.
             </p>
 
             <br>
 
-            <form action="/proyecto_cava_Noble/admin/eliminar-producto.php" method="POST" class="auth-form">
-                <input type="hidden" name="csrf_token" value="<?php echo e($csrfToken); ?>">
-                <input type="hidden" name="id" value="<?php echo (int)$producto['id']; ?>">
+            <form
+                action="<?php echo e(
+                    url('admin/eliminar-producto.php')
+                ); ?>"
+                method="POST"
+                class="auth-form"
+            >
 
-                <button type="submit" class="btn btn-primary">
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="<?php echo e($csrfToken); ?>"
+                >
+
+                <input
+                    type="hidden"
+                    name="id"
+                    value="<?php echo $producto->id(); ?>"
+                >
+
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                >
                     Confirmar eliminación
                 </button>
 
-                <a href="/proyecto_cava_Noble/admin/productos.php" class="btn btn-secondary">
+                <a
+                    href="<?php echo e(
+                        url('admin/productos.php')
+                    ); ?>"
+                    class="btn btn-secondary"
+                >
                     Cancelar
                 </a>
-            </form>
-        </div>
 
+            </form>
+
+        </div>
     </div>
 </main>
 
-<?php include '../includes/footer.php'; ?>
+<?php
+
+include __DIR__ . '/../includes/footer.php';
+
+?>

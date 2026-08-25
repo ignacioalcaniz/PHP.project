@@ -1,28 +1,30 @@
 <?php
-require_once '../includes/auth.php';
-require_once '../config/database.php';
+
+declare(strict_types=1);
+
+require_once __DIR__ . '/../includes/auth.php';
 
 requireAdmin();
 
-$pdo = conectarDB();
+require_once __DIR__ . '/../bootstrap/app.php';
 
-$sql = "
-    SELECT
-        p.*,
-        c.nombre AS categoria,
-        b.nombre AS bodega_nombre
-    FROM productos p
-    LEFT JOIN categorias c ON p.categoria_id = c.id
-    LEFT JOIN bodegas b ON p.bodega_id = b.id
-    ORDER BY p.id DESC
-";
+/*
+|--------------------------------------------------------------------------
+| Productos - Administración
+|--------------------------------------------------------------------------
+|
+| Este archivo funciona únicamente como punto de entrada HTTP.
+| La obtención y procesamiento de productos pertenece al módulo
+| de dominio y no a esta vista.
+|
+*/
 
-$stmt = $pdo->prepare($sql);
-$stmt->execute();
+$result = $productController->adminIndex();
 
-$productos = $stmt->fetchAll();
+$productos = $result['products'];
+$error = $result['error'];
 
-include '../includes/header.php';
+include __DIR__ . '/../includes/header.php';
 ?>
 
 <main class="section">
@@ -34,82 +36,127 @@ include '../includes/header.php';
         </div>
 
         <div style="margin-bottom: 30px;">
-            <a href="/proyecto_cava_Noble/admin/crear-producto.php" class="btn btn-primary">
+            <a
+                href="/proyecto_cava_Noble/admin/crear-producto.php"
+                class="btn btn-primary"
+            >
                 Agregar producto
             </a>
         </div>
 
-        <div class="cart-box" style="max-width:100%;">
+        <?php if ($error !== null): ?>
+            <div class="form-container">
+                <p>
+                    <?php echo e($error); ?>
+                </p>
+            </div>
 
-            <?php if (empty($productos)): ?>
+        <?php elseif ($productos === []): ?>
+            <div class="form-container">
                 <p>No hay productos cargados.</p>
-            <?php else: ?>
+            </div>
 
+        <?php else: ?>
+
+            <div
+                class="cart-box"
+                style="max-width: 100%;"
+            >
                 <?php foreach ($productos as $producto): ?>
 
                     <div class="cart-item">
 
-                        <div style="display:flex; gap:20px; align-items:center;">
-
+                        <div
+                            style="
+                                display: flex;
+                                gap: 20px;
+                                align-items: center;
+                            "
+                        >
                             <img
-                                src="<?php echo htmlspecialchars($producto['imagen']); ?>"
-                                alt="<?php echo htmlspecialchars($producto['nombre']); ?>"
-                                style="width:100px; height:120px; object-fit:cover;"
+                                src="<?php echo e($producto->image()); ?>"
+                                alt="<?php echo e($producto->name()); ?>"
+                                style="
+                                    width: 100px;
+                                    height: 120px;
+                                    object-fit: cover;
+                                "
                             >
 
                             <div>
-                                <h3><?php echo htmlspecialchars($producto['nombre']); ?></h3>
+                                <h3>
+                                    <?php echo e($producto->name()); ?>
+                                </h3>
 
                                 <p>
-                                    <?php echo htmlspecialchars($producto['bodega_nombre'] ?? 'Sin bodega'); ?>
+                                    <?php echo e(
+                                        $producto->wineryName()
+                                            ?? 'Sin bodega'
+                                    ); ?>
+
                                     ·
-                                    <?php echo htmlspecialchars($producto['categoria'] ?? 'Sin categoría'); ?>
+
+                                    <?php echo e(
+                                        $producto->categoryName()
+                                            ?? 'Sin categoría'
+                                    ); ?>
                                 </p>
 
                                 <p>
                                     <strong>Precio:</strong>
-                                    $<?php echo number_format($producto['precio'], 0, ',', '.'); ?>
+
+                                    $<?php echo number_format(
+                                        $producto->price(),
+                                        0,
+                                        ',',
+                                        '.'
+                                    ); ?>
                                 </p>
 
                                 <p>
                                     <strong>Stock:</strong>
-                                    <?php echo (int)$producto['stock']; ?>
+
+                                    <?php echo $producto->stock(); ?>
                                 </p>
 
-                                <?php if ((int)$producto['destacado'] === 1): ?>
-                                    <span class="admin-badge">Destacado</span>
+                                <?php if ($producto->isFeatured()): ?>
+                                    <span class="admin-badge">
+                                        Destacado
+                                    </span>
                                 <?php endif; ?>
                             </div>
-
                         </div>
 
-                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-
+                        <div
+                            style="
+                                display: flex;
+                                gap: 10px;
+                                flex-wrap: wrap;
+                            "
+                        >
                             <a
-                                href="/proyecto_cava_Noble/admin/editar-producto.php?id=<?php echo $producto['id']; ?>"
+                                href="/proyecto_cava_Noble/admin/editar-producto.php?id=<?php echo $producto->id(); ?>"
                                 class="btn btn-secondary"
                             >
                                 Editar
                             </a>
 
                             <a
-                                href="/proyecto_cava_Noble/admin/eliminar-producto.php?id=<?php echo $producto['id']; ?>"
+                                href="/proyecto_cava_Noble/admin/eliminar-producto.php?id=<?php echo $producto->id(); ?>"
                                 class="btn btn-primary"
                             >
                                 Eliminar
                             </a>
-
                         </div>
 
                     </div>
 
                 <?php endforeach; ?>
+            </div>
 
-            <?php endif; ?>
-
-        </div>
+        <?php endif; ?>
 
     </div>
 </main>
 
-<?php include '../includes/footer.php'; ?>
+<?php include __DIR__ . '/../includes/footer.php'; ?>
